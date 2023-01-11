@@ -1,0 +1,33 @@
+name: window_moment
+description: A sample command-line application.
+version: 1.0.0
+# homepage: https://www.example.com
+
+environment:
+  sdk: '>=2.18.6 <3.0.0'
+
+# dependencies:
+#   path: ^1.8.0
+
+dev_dependencies:
+  ffigen: ^6.0.0
+  lints: ^2.0.0
+  test: ^1.16.0
+dependencies:
+  bidi: ^2.0.6
+  ffi: ^1.2.1
+  glfw: ^0.5.0
+  opengl: ^0.6.0
+  path: ^1.8.3
+  vector_math: ^2.1.4
+
+
+ffigen:
+  output: 'bin/lib/harfbuzz.dart'
+  name: 'HarfbuzzLibrary'
+  llvm-path:
+   - '/usr/lib/llvm-15/lib/libclang.so.1'
+  compiler-opts: "-I/home/glisco/Downloads/harfbuzz-6.0.0/src/"
+  headers:
+    entry-points:
+      - '/home/glisco/Downloads/harfbuzz-6.0.0/src/hb.h'
