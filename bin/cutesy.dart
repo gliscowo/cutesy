@@ -104,7 +104,7 @@ void main(List<String> args) {
   initTextRenderer();
   updateCursor();
 
-  final notSoGood = bufferFromString("bruv, that's not so good !=");
+  final notSoGood = "bruv, that's not so good !=".toVisual().shape();
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -146,9 +146,9 @@ void main(List<String> args) {
 
     drawText(100, 100, .75, notSoGood, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
 
-    final fpsBuffer = bufferFromString("turns out the bee movie script is too long");
+    final fpsBuffer = "turns out the bee movie script is too long".toVisual().shape();
     drawText(2, 0, .5, fpsBuffer, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
-    freeBuffer(fpsBuffer);
+    fpsBuffer.destroy();
 
     _window.nextFrame();
 

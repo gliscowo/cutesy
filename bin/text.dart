@@ -16,8 +16,7 @@ class Glyph {
   final Vector2 uv;
   final Vector2 size;
   final Vector2 bearing;
-  final int advance;
-  Glyph(this.uv, this.size, this.bearing, this.advance);
+  Glyph(this.uv, this.size, this.bearing);
 }
 
 const fontPath = "resources/font/CascadiaCode_Regular.otf";
@@ -32,27 +31,33 @@ late final Pointer<hb_font_t> _hbFont;
 
 late final int glyphTexture;
 
-Pointer<hb_buffer_t> bufferFromString(String text) {
-  // final now = DateTime.now();
+extension StringDrawingExtensions on String {
+  String toVisual() => String.fromCharCodes(logicalToVisual(this));
 
-  final hbFeatures = malloc<hb_feature_t>();
-  _hb.hb_feature_from_string("calt on".toNativeUtf8().cast(), -1, hbFeatures);
+  Pointer<hb_buffer_t> shape() {
+    // final now = DateTime.now();
 
-  final hbBuffer = _hb.hb_buffer_create();
-  _hb.hb_buffer_add_utf8(hbBuffer, String.fromCharCodes(logicalToVisual(text)).toNativeUtf8().cast(), -1, 0, -1);
-  _hb.hb_buffer_set_direction(hbBuffer, hb_direction_t.HB_DIRECTION_LTR);
-  _hb.hb_buffer_set_script(hbBuffer, hb_script_t.HB_SCRIPT_LATIN);
-  _hb.hb_buffer_set_language(hbBuffer, _hb.hb_language_from_string("en".toNativeUtf8().cast(), -1));
-  _hb.hb_shape(_hbFont, hbBuffer, hbFeatures, 1);
-  malloc.free(hbFeatures);
+    final hbFeatures = malloc<hb_feature_t>();
+    _hb.hb_feature_from_string("calt on".toNativeUtf8().cast(), -1, hbFeatures);
 
-  // print(
-  //     "took ${(DateTime.now().microsecondsSinceEpoch - now.microsecondsSinceEpoch) / 1000}ms to shape ${text.length} chars");
+    final buffer = _hb.hb_buffer_create();
+    _hb.hb_buffer_add_utf8(buffer, String.fromCharCodes(logicalToVisual(this)).toNativeUtf8().cast(), -1, 0, -1);
+    _hb.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
+    _hb.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
+    _hb.hb_buffer_set_language(buffer, _hb.hb_language_from_string("en".toNativeUtf8().cast(), -1));
+    _hb.hb_shape(_hbFont, buffer, hbFeatures, 1);
+    malloc.free(hbFeatures);
 
-  return hbBuffer;
+    // print(
+    //     "took ${(DateTime.now().microsecondsSinceEpoch - now.microsecondsSinceEpoch) / 1000}ms to shape ${text.length} chars");
+
+    return buffer;
+  }
 }
 
-void freeBuffer(Pointer<hb_buffer_t> buffer) => _hb.hb_buffer_destroy(buffer);
+extension DestoryBuffer on Pointer<hb_buffer_t> {
+  void destroy() => _hb.hb_buffer_destroy(this);
+}
 
 void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, GlVertexBuffer vbo,
     GlVertexArray vao, Matrix4 projection, Vector3 color) {
@@ -71,8 +76,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
   final glyphInfo = _hb.hb_buffer_get_glyph_infos(hbBuffer, glyphCount);
   final glyphPos = _hb.hb_buffer_get_glyph_positions(hbBuffer, glyphCount);
 
-  int cursorX = 0;
-  int cursorY = 0;
+  int cursorX = 0, cursorY = 0;
   final textBuffer = BufferBuilder();
 
   for (int i = 0; i < glyphCount.value; i++) {
@@ -85,8 +89,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
     final glyph = _getGlyph(codepoint);
     final xpos = x + cursorX + xOffset + glyph.bearing.x * scale;
     final ypos = y + cursorY + yOffset + (fontSize - glyph.bearing.y) * scale;
-    final width = glyph.size.x * scale;
-    final height = glyph.size.y * scale;
+    final width = glyph.size.x * scale, height = glyph.size.y * scale;
 
     final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
     final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
@@ -137,6 +140,8 @@ void initTextRenderer() {
   glyphTexture = glyphTextureId.value;
   malloc.free(glyphTextureId);
 
+  // Prepare glyph atlas
+
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
 
   final emptyBuffer = calloc.allocate<Uint8>(1024 * 1024);
@@ -182,6 +187,5 @@ Glyph _renderGlyph(int codepoint) {
     Vector2(glyphX.toDouble(), glyphY.toDouble()),
     Vector2(_ftFace.ref.glyph.ref.bitmap.width.toDouble(), _ftFace.ref.glyph.ref.bitmap.rows.toDouble()),
     Vector2(_ftFace.ref.glyph.ref.bitmap_left.toDouble(), _ftFace.ref.glyph.ref.bitmap_top.toDouble()),
-    _ftFace.ref.glyph.ref.advance.x,
   );
 }
