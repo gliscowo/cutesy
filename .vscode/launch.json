@@ -8,7 +8,7 @@
             "name": "cutesy",
             "request": "launch",
             "type": "dart",
-            "program": "bin/window_moment.dart"
+            "program": "bin/cutesy.dart"
         }
     ]
 }
