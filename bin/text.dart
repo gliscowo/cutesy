@@ -13,11 +13,11 @@ import 'shader.dart';
 import 'vertex.dart';
 
 class Glyph {
-  final int textureId;
+  final Vector2 uv;
   final Vector2 size;
   final Vector2 bearing;
   final int advance;
-  Glyph(this.textureId, this.size, this.bearing, this.advance);
+  Glyph(this.uv, this.size, this.bearing, this.advance);
 }
 
 const fontPath = "resources/font/CascadiaCode_Regular.otf";
@@ -29,6 +29,8 @@ late final FT_Face _ftFace;
 
 final _hb = HarfbuzzLibrary(DynamicLibrary.open("resources/lib/libharfbuzz.so"));
 late final Pointer<hb_font_t> _hbFont;
+
+late final int glyphTexture;
 
 Pointer<hb_buffer_t> bufferFromString(String text) {
   // final now = DateTime.now();
@@ -71,6 +73,8 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
 
   int cursorX = 0;
   int cursorY = 0;
+  final textBuffer = BufferBuilder();
+
   for (int i = 0; i < glyphCount.value; i++) {
     int codepoint = glyphInfo[i].codepoint;
     int xOffset = (glyphPos[i].x_offset / 64 * fontSize * scale).round();
@@ -84,21 +88,25 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
     final width = glyph.size.x * scale;
     final height = glyph.size.y * scale;
 
-    glBindTexture(GL_TEXTURE_2D, glyph.textureId);
+    final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
+    final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
 
-    vbo
-      ..upload(BufferBuilder()
-        ..color(xpos, ypos, 0, 0)
-        ..color(xpos, ypos + height, 0, 1)
-        ..color(xpos + width, ypos, 1, 0)
-        ..color(xpos + width, ypos, 1, 0)
-        ..color(xpos, ypos + height, 0, 1)
-        ..color(xpos + width, ypos + height, 1, 1))
-      ..draw(6, vao: vao);
+    textBuffer
+      ..color(xpos, ypos, u0, v0)
+      ..color(xpos, ypos + height, u0, v1)
+      ..color(xpos + width, ypos, u1, v0)
+      ..color(xpos + width, ypos, u1, v0)
+      ..color(xpos, ypos + height, u0, v1)
+      ..color(xpos + width, ypos + height, u1, v1);
 
     cursorX += xAdvance;
     cursorY += yAdvance;
   }
+
+  glBindTexture(GL_TEXTURE_2D, glyphTexture);
+  vbo
+    ..upload(textBuffer)
+    ..draw(glyphCount.value * 6, vao: vao);
 }
 
 void initTextRenderer() {
@@ -123,36 +131,55 @@ void initTextRenderer() {
   final hbFace = _hb.hb_face_create(blob, 0);
   _hbFont = _hb.hb_font_create(hbFace);
   _hb.hb_font_set_scale(_hbFont, 64, 64);
+
+  final glyphTextureId = malloc<Uint32>();
+  glGenTextures(1, glyphTextureId);
+  glyphTexture = glyphTextureId.value;
+  malloc.free(glyphTextureId);
+
+  glBindTexture(GL_TEXTURE_2D, glyphTexture);
+
+  final emptyBuffer = calloc.allocate<Uint8>(1024 * 1024);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1024, 1024, 0, GL_RED, GL_UNSIGNED_BYTE, emptyBuffer);
+  calloc.free(emptyBuffer);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
 Glyph _getGlyph(int codepoint) {
   return _glyphs[codepoint] ?? _renderGlyph(codepoint);
 }
 
+int _nextGlyphX = 0;
+int _nextGlyphY = 0;
+
 Glyph _renderGlyph(int codepoint) {
   if (_ft.FT_Load_Glyph(_ftFace, codepoint, FT_LOAD_RENDER) != 0) {
     throw Exception("Failed to load glyph ${String.fromCharCode(codepoint)}");
   }
 
-  final textureId = malloc<Uint32>();
-  glGenTextures(1, textureId);
+  glBindTexture(GL_TEXTURE_2D, glyphTexture);
 
-  final texture = textureId.value;
-  malloc.free(textureId);
+  if (_nextGlyphX + _ftFace.ref.glyph.ref.bitmap.width >= 1024) {
+    _nextGlyphY += _ftFace.ref.glyph.ref.bitmap.rows;
+    _nextGlyphX = 0;
+  }
 
-  glBindTexture(GL_TEXTURE_2D, texture);
+  int glyphX = _nextGlyphX;
+  int glyphY = _nextGlyphY;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, _ftFace.ref.glyph.ref.bitmap.width, _ftFace.ref.glyph.ref.bitmap.rows, 0,
-      GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
+  glTexSubImage2D(GL_TEXTURE_2D, 0, glyphX, glyphY, _ftFace.ref.glyph.ref.bitmap.width,
+      _ftFace.ref.glyph.ref.bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
 
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  _nextGlyphX += _ftFace.ref.glyph.ref.bitmap.width;
 
   return _glyphs[codepoint] = Glyph(
-    texture,
+    Vector2(glyphX.toDouble(), glyphY.toDouble()),
     Vector2(_ftFace.ref.glyph.ref.bitmap.width.toDouble(), _ftFace.ref.glyph.ref.bitmap.rows.toDouble()),
     Vector2(_ftFace.ref.glyph.ref.bitmap_left.toDouble(), _ftFace.ref.glyph.ref.bitmap_top.toDouble()),
     _ftFace.ref.glyph.ref.advance.x,
