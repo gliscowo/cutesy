@@ -5,6 +5,8 @@ import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
 
+import 'cutesy.dart';
+
 class GlShader {
   final int _id;
 
@@ -38,7 +40,8 @@ class GlShader {
 
 class GlProgram {
   final int _id;
-  late final Attribs _attribs;
+  late final SubscriptSupplier<String, int> _attribs;
+  late final SubscriptSupplier<String, int> _uniforms;
 
   GlProgram(List<GlShader> shaders) : _id = glCreateProgram() {
     for (final shader in shaders) {
@@ -51,26 +54,25 @@ class GlProgram {
       glDeleteShader(shader.id);
     }
 
-    final success = malloc<Int32>();
-    glGetProgramiv(_id, GL_LINK_STATUS, success);
-    print("Program '$_id' link success: ${success.value}");
+    malloc.withAlloc<Int32>((success) {
+      glGetProgramiv(_id, GL_LINK_STATUS, success);
+      print("Program '$_id' link success: ${success.value}");
+    }, sizeOf<Int32>());
 
-    malloc.free(success);
-
-    _attribs = Attribs._(this);
+    _attribs = SubscriptSupplier._((String name) => glGetAttribLocation(_id, name.toNativeUtf8()));
+    _uniforms = SubscriptSupplier._((String name) => glGetUniformLocation(_id, name.toNativeUtf8()));
   }
 
-  Attribs get attribs => _attribs;
+  SubscriptSupplier get attribs => _attribs;
+  SubscriptSupplier get uniforms => _uniforms;
   int get id => _id;
 
   void use() => glUseProgram(_id);
 }
 
-class Attribs {
-  final GlProgram _program;
-  Attribs._(this._program);
+class SubscriptSupplier<T, U> {
+  final U Function(T) _getter;
+  SubscriptSupplier._(this._getter);
 
-  int operator [](String name) {
-    return glGetAttribLocation(_program.id, name.toNativeUtf8());
-  }
+  U operator [](T query) => _getter(query);
 }

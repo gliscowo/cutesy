@@ -62,8 +62,8 @@ void main(List<String> args) {
     GlShader.fragment(File("resources/shader/position.frag")),
   ]);
 
-  final projectionLocation = glGetUniformLocation(program.id, "uProjection".toNativeUtf8());
-  final transformLocation = glGetUniformLocation(program.id, "uTransform".toNativeUtf8());
+  final projectionLocation = program.uniforms["uProjection"];
+  final transformLocation = program.uniforms["uTransform"];
 
   final textProgram = GlProgram([
     GlShader.vertex(File("resources/shader/text.vert")),
@@ -90,7 +90,7 @@ void main(List<String> args) {
   glVertexAttribPointer(textProgram.attribs["aVertex"], 4, GL_FLOAT, GL_FALSE, 4 * sizeOf<Float>(), 0);
 
   textProgram.use();
-  glUniform3f(glGetUniformLocation(textProgram.id, "uTextColor".toNativeUtf8()), 1, 0, 1);
+  glUniform3f(textProgram.uniforms["uTextColor"], 1, 0, 1);
 
   double lastTime = glfwGetTime();
   int frames = 0;
@@ -165,6 +165,14 @@ void main(List<String> args) {
   }
 
   glfwTerminate();
+}
+
+extension Based on Allocator {
+  void withAlloc<T extends NativeType>(void Function(Pointer<T>) action, int size, [int count = 1]) {
+    final pointer = allocate<T>(size * count);
+    action(pointer);
+    free(pointer);
+  }
 }
 
 int _nextCursorIndex = -1;

@@ -62,12 +62,12 @@ extension DestoryBuffer on Pointer<hb_buffer_t> {
 void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, GlVertexBuffer vbo,
     GlVertexArray vao, Matrix4 projection, Vector3 color) {
   program.use();
-  glUniform3f(glGetUniformLocation(program.id, "uTextColor".toNativeUtf8()), color.r, color.g, color.b);
+  glUniform3f(program.uniforms["uTextColor"], color.r, color.g, color.b);
 
   final projData = Float32List.fromList(projection.storage);
   final buffer = malloc.allocate<Float>(projData.lengthInBytes);
   buffer.asTypedList(projData.length).setRange(0, projData.length, projData);
-  glUniformMatrix4fv(glGetUniformLocation(program.id, "uProjection".toNativeUtf8()), 1, GL_FALSE, buffer);
+  glUniformMatrix4fv(program.uniforms["uProjection"], 1, GL_FALSE, buffer);
   malloc.free(buffer);
 
   glActiveTexture(GL_TEXTURE0);
@@ -114,13 +114,13 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
 
 void initTextRenderer() {
   // FreeType
-  final ft = malloc.allocate<FT_Library>(sizeOf<Pointer<FT_Library>>());
+  final ft = malloc<FT_Library>();
   if (_ft.FT_Init_FreeType(ft) != 0) {
     print("Could not initialize FreeType");
     exit(-1);
   }
 
-  final face = malloc.allocate<FT_Face>(sizeOf<Pointer<FT_Face>>());
+  final face = malloc<FT_Face>();
   if (_ft.FT_New_Face(ft.value, fontPath.toNativeUtf8().cast(), 0, face) != 0) {
     print("Could not load font");
     exit(-1);
@@ -135,16 +135,16 @@ void initTextRenderer() {
   _hbFont = _hb.hb_font_create(hbFace);
   _hb.hb_font_set_scale(_hbFont, 64, 64);
 
+  // Prepare glyph atlas
+
   final glyphTextureId = malloc<Uint32>();
   glGenTextures(1, glyphTextureId);
   glyphTexture = glyphTextureId.value;
   malloc.free(glyphTextureId);
 
-  // Prepare glyph atlas
-
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
 
-  final emptyBuffer = calloc.allocate<Uint8>(1024 * 1024);
+  final emptyBuffer = calloc<Uint8>(1024 * 1024);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1024, 1024, 0, GL_RED, GL_UNSIGNED_BYTE, emptyBuffer);
   calloc.free(emptyBuffer);
@@ -167,8 +167,6 @@ Glyph _renderGlyph(int codepoint) {
     throw Exception("Failed to load glyph ${String.fromCharCode(codepoint)}");
   }
 
-  glBindTexture(GL_TEXTURE_2D, glyphTexture);
-
   if (_nextGlyphX + _ftFace.ref.glyph.ref.bitmap.width >= 1024) {
     _nextGlyphY += _ftFace.ref.glyph.ref.bitmap.rows;
     _nextGlyphX = 0;
@@ -177,6 +175,7 @@ Glyph _renderGlyph(int codepoint) {
   int glyphX = _nextGlyphX;
   int glyphY = _nextGlyphY;
 
+  glBindTexture(GL_TEXTURE_2D, glyphTexture);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexSubImage2D(GL_TEXTURE_2D, 0, glyphX, glyphY, _ftFace.ref.glyph.ref.bitmap.width,
       _ftFace.ref.glyph.ref.bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
