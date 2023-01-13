@@ -8,7 +8,8 @@ import 'package:vector_math/vector_math.dart';
 
 import 'cutesy.dart';
 import 'gl/shader.dart';
-import 'gl/vertex.dart';
+import 'gl/vertex_buffer.dart';
+import 'gl/vertex_descriptor.dart';
 import 'native/freetype.dart';
 import 'native/harfbuzz.dart';
 
@@ -64,9 +65,10 @@ extension DestoryBuffer on Pointer<hb_buffer_t> {
   void destroy() => _hb.hb_buffer_destroy(this);
 }
 
-final _textBuffer = BufferBuilder(4096);
-void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, GlVertexBuffer vbo,
-    GlVertexArray vao, Matrix4 projection, Vector3 color) {
+VertexRenderObject<TextVertexBuilder>? _textRenderObject;
+
+void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, Matrix4 projection,
+    Vector3 color) {
   program.use();
   program.uniform3vf("uTextColor", color);
   program.uniformMat4("uProjection", projection);
@@ -78,7 +80,8 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
   final glyphPos = _hb.hb_buffer_get_glyph_positions(hbBuffer, glyphCount);
 
   int cursorX = 0, cursorY = 0;
-  _textBuffer.rewind();
+  _textRenderObject ??= VertexRenderObject(TextVertexBuilder.descriptor, program);
+  _textRenderObject!.builder.reset();
 
   for (int i = 0; i < glyphCount.value; i++) {
     int codepoint = glyphInfo[i].codepoint;
@@ -95,22 +98,22 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
     final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
     final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
 
-    _textBuffer
-      ..float4(xpos, ypos, u0, v0)
-      ..float4(xpos, ypos + height, u0, v1)
-      ..float4(xpos + width, ypos, u1, v0)
-      ..float4(xpos + width, ypos, u1, v0)
-      ..float4(xpos, ypos + height, u0, v1)
-      ..float4(xpos + width, ypos + height, u1, v1);
+    _textRenderObject!.builder
+      ..vertex(xpos, ypos, u0, v0)
+      ..vertex(xpos, ypos + height, u0, v1)
+      ..vertex(xpos + width, ypos, u1, v0)
+      ..vertex(xpos + width, ypos, u1, v0)
+      ..vertex(xpos, ypos + height, u0, v1)
+      ..vertex(xpos + width, ypos + height, u1, v1);
 
     cursorX += xAdvance;
     cursorY += yAdvance;
   }
 
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
-  vbo
-    ..upload(_textBuffer, static: false)
-    ..draw(glyphCount.value * 6, vao: vao);
+  _textRenderObject!
+    ..upload(static: false)
+    ..draw();
 }
 
 void initTextRenderer() {

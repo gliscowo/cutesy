@@ -6,6 +6,39 @@ import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'shader.dart';
+import 'vertex_descriptor.dart';
+
+class VertexRenderObject<VB extends VertexBuilder> {
+  final GlVertexBuffer _vbo = GlVertexBuffer();
+  final GlVertexArray _vao = GlVertexArray();
+
+  final BufferBuilder _buffer;
+
+  final VertexDescriptor _descriptor;
+  late final VB builder;
+
+  VertexRenderObject(VertexDescriptor<VB> descriptor, GlProgram program, {int initialBufferSize = 1024})
+      : _descriptor = descriptor,
+        _buffer = BufferBuilder(initialBufferSize) {
+    _vbo.bind();
+    _vao.bind();
+
+    descriptor.prepareAttributes(program.getAttributeLocation);
+
+    _vao.unbind();
+    _vbo.unbind();
+
+    builder = descriptor.createBuilder(_buffer);
+  }
+
+  void upload({bool static = false}) {
+    _vbo.upload(_buffer, static: static);
+  }
+
+  void draw() {
+    _vbo.draw(_buffer._cursor ~/ _descriptor.vertexSize, vao: _vao);
+  }
+}
 
 class GlVertexBuffer {
   late final int _id;
@@ -34,7 +67,7 @@ class GlVertexBuffer {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
-  void upload(BufferBuilder data, {bool static = true, bool unbind = false}) {
+  void upload(BufferBuilder data, {bool static = true}) {
     final bytes = data._data.buffer.asUint8List();
 
     final buffer = malloc<Uint8>(data._cursor);
@@ -42,10 +75,9 @@ class GlVertexBuffer {
 
     glBindBuffer(GL_ARRAY_BUFFER, _id);
     glBufferData(GL_ARRAY_BUFFER, data._cursor, buffer, static ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     malloc.free(buffer);
-
-    if (unbind) glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
   void delete() {

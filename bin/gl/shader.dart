@@ -79,7 +79,7 @@ class GlProgram {
   int _uniformLocation(String uniform) =>
       uniform.withAsNative((utf8) => _uniformCache.putIfAbsent(uniform, () => glGetUniformLocation(_id, utf8)));
 
-  int attributeLocation(String attibute) => attibute.withAsNative((utf8) => glGetAttribLocation(_id, utf8));
+  int getAttributeLocation(String attibute) => attibute.withAsNative((utf8) => glGetAttribLocation(_id, utf8));
 
   int get id => _id;
 }

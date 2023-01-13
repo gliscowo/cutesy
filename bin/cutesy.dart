@@ -8,7 +8,8 @@ import 'package:vector_math/vector_math.dart';
 
 import 'gl/debug.dart';
 import 'gl/shader.dart';
-import 'gl/vertex.dart';
+import 'gl/vertex_buffer.dart';
+import 'gl/vertex_descriptor.dart';
 import 'text.dart';
 import 'window.dart';
 
@@ -54,19 +55,7 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final triangleBuffer = BufferBuilder();
-  final triangle = GlVertexBuffer()..bind();
-  final triangleVao = GlVertexArray()..bind();
-  glEnableVertexAttribArray(program.attributeLocation("aPos"));
-  glVertexAttribPointer(program.attributeLocation("aPos"), 3, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 0);
-  glEnableVertexAttribArray(program.attributeLocation("aColor"));
-  glVertexAttribPointer(
-      program.attributeLocation("aColor"), 4, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 3 * sizeOf<Float>());
-
-  final aaaa = GlVertexBuffer()..bind();
-  final aaaaVao = GlVertexArray()..bind();
-  glEnableVertexAttribArray(textProgram.attributeLocation("aVertex"));
-  glVertexAttribPointer(textProgram.attributeLocation("aVertex"), 4, GL_FLOAT, GL_FALSE, 4 * sizeOf<Float>(), 0);
+  final triangle = VertexRenderObject(HsvVertexBuilder.descriptor, program);
 
   textProgram.use();
   program.uniform3f("uTextColor", 1, 0, 1);
@@ -112,21 +101,20 @@ void main(List<String> args) {
     program.uniformMat4("uTransform", transform);
     program.uniformMat4("uProjection", projection);
 
+    triangle.builder
+      ..reset()
+      ..vertex(Vector3(0, 200, 0), Vector4(hue, 1, 1, 1))
+      ..vertex(Vector3(200, 200, 0), Vector4(hue + 1 / 3, 1, 1, 1))
+      ..vertex(Vector3(100, 0, 0), Vector4(hue, 1, 1, 1));
+
     triangle
-      ..upload(triangleBuffer
-        ..rewind()
-        ..float3(0, 200, 0)
-        ..float4(hue, 1, 1, 1)
-        ..float3(200, 200, 0)
-        ..float4(hue + 1 / 3, 1, 1, 1)
-        ..float3(100, 0, 0)
-        ..float4(hue, 1, 1, 1))
-      ..draw(triangleBuffer.elements(sizeOf<Float>() * 7), vao: triangleVao);
+      ..upload()
+      ..draw();
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    drawText(100, 100, .75, notSoGood, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
+    drawText(100, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
 
     // final fpsBuffer = "turns out the bee movie script is too long".toVisual().shape();
     // drawText(2, 0, .5, fpsBuffer, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
