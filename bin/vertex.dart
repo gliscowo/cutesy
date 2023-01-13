@@ -11,9 +11,10 @@ class GlVertexBuffer {
   late final int _id;
 
   GlVertexBuffer() {
-    final idPointer = calloc<Uint32>();
+    final idPointer = malloc<Uint32>();
     glGenBuffers(1, idPointer);
     _id = idPointer.value;
+    malloc.free(idPointer);
   }
 
   void draw(int count, {required GlVertexArray? vao, GlProgram? program}) {
@@ -33,18 +34,24 @@ class GlVertexBuffer {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
   }
 
-  void upload(BufferBuilder data, {bool unbind = false}) {
-    final bytes = data._builder.takeBytes();
+  void upload(BufferBuilder data, {bool static = true, bool unbind = false}) {
+    final bytes = data._data.buffer.asUint8List();
 
-    final buffer = malloc.allocate<Uint8>(bytes.length);
-    buffer.asTypedList(bytes.length).setRange(0, bytes.length, bytes);
+    final buffer = malloc<Uint8>(data._cursor);
+    buffer.asTypedList(data._cursor).setRange(0, data._cursor, bytes);
 
     glBindBuffer(GL_ARRAY_BUFFER, _id);
-    glBufferData(GL_ARRAY_BUFFER, bytes.length, buffer, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, data._cursor, buffer, static ? GL_STATIC_DRAW : GL_DYNAMIC_DRAW);
 
     malloc.free(buffer);
 
     if (unbind) glBindBuffer(GL_ARRAY_BUFFER, 0);
+  }
+
+  void delete() {
+    final idPointer = malloc<Uint32>();
+    glDeleteBuffers(1, idPointer);
+    malloc.free(idPointer);
   }
 }
 
@@ -67,28 +74,51 @@ class GlVertexArray {
 }
 
 class BufferBuilder {
-  final BytesBuilder _builder = BytesBuilder();
+  static const int _float32Size = 4;
 
-  void vertex(double x, double y, double z) => _float3(x, y, z);
-  void vertexV(Vector3 v) => _float3(v.x, v.y, v.z);
-  void color(double r, double g, double b, double a) => _float4(r, g, b, a);
+  ByteData _data;
+  int _cursor = 0;
 
-  void _float3(double a, double b, double c) {
-    final data = ByteData(sizeOf<Float>() * 3)
-      ..setFloat32(sizeOf<Float>() * 0, a, Endian.little)
-      ..setFloat32(sizeOf<Float>() * 1, b, Endian.little)
-      ..setFloat32(sizeOf<Float>() * 2, c, Endian.little);
+  BufferBuilder([int initialSize = 64]) : _data = ByteData(initialSize);
 
-    _builder.add(data.buffer.asUint8List());
+  void vec3(Vector3 vec) => float3(vec.x, vec.y, vec.z);
+  void float3(double a, double b, double c) {
+    _ensureCapacity(_float32Size * 3);
+
+    _data
+      ..setFloat32(_cursor + _float32Size * 0, a, Endian.little)
+      ..setFloat32(_cursor + _float32Size * 1, b, Endian.little)
+      ..setFloat32(_cursor + _float32Size * 2, c, Endian.little);
+    _cursor += _float32Size * 3;
   }
 
-  void _float4(double a, double b, double c, double d) {
-    final data = ByteData(sizeOf<Float>() * 4)
-      ..setFloat32(sizeOf<Float>() * 0, a, Endian.little)
-      ..setFloat32(sizeOf<Float>() * 1, b, Endian.little)
-      ..setFloat32(sizeOf<Float>() * 2, c, Endian.little)
-      ..setFloat32(sizeOf<Float>() * 3, d, Endian.little);
+  void vec4(Vector4 vec) => float4(vec.x, vec.y, vec.z, vec.w);
+  void float4(double a, double b, double c, double d) {
+    _ensureCapacity(_float32Size * 4);
 
-    _builder.add(data.buffer.asUint8List());
+    _data
+      ..setFloat32(_cursor + _float32Size * 0, a, Endian.little)
+      ..setFloat32(_cursor + _float32Size * 1, b, Endian.little)
+      ..setFloat32(_cursor + _float32Size * 2, c, Endian.little)
+      ..setFloat32(_cursor + _float32Size * 3, d, Endian.little);
+    _cursor += _float32Size * 4;
+  }
+
+  void rewind() {
+    _cursor = 0;
+  }
+
+  int elements(int vertexSizeInBytes) => _cursor ~/ vertexSizeInBytes;
+
+  void _ensureCapacity(int bytes) {
+    // print("Ensuring capacity for $bytes bytes at cursor $_cursor in buffer $hashCode of size ${_data.lengthInBytes}");
+    if (_cursor + bytes > _data.lengthInBytes) {
+      print(
+          "Growing BufferBuilder $hashCode from ${_data.lengthInBytes} bytes to ${_data.lengthInBytes * 2} to fit ${_cursor + bytes} bytes");
+
+      final newData = ByteData(_data.lengthInBytes * 2);
+      newData.buffer.asUint8List().setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());
+      _data = newData;
+    }
   }
 }

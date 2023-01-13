@@ -59,6 +59,7 @@ extension DestoryBuffer on Pointer<hb_buffer_t> {
   void destroy() => _hb.hb_buffer_destroy(this);
 }
 
+final _textBuffer = BufferBuilder(4096);
 void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, GlVertexBuffer vbo,
     GlVertexArray vao, Matrix4 projection, Vector3 color) {
   program.use();
@@ -77,7 +78,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
   final glyphPos = _hb.hb_buffer_get_glyph_positions(hbBuffer, glyphCount);
 
   int cursorX = 0, cursorY = 0;
-  final textBuffer = BufferBuilder();
+  _textBuffer.rewind();
 
   for (int i = 0; i < glyphCount.value; i++) {
     int codepoint = glyphInfo[i].codepoint;
@@ -94,13 +95,13 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
     final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
     final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
 
-    textBuffer
-      ..color(xpos, ypos, u0, v0)
-      ..color(xpos, ypos + height, u0, v1)
-      ..color(xpos + width, ypos, u1, v0)
-      ..color(xpos + width, ypos, u1, v0)
-      ..color(xpos, ypos + height, u0, v1)
-      ..color(xpos + width, ypos + height, u1, v1);
+    _textBuffer
+      ..float4(xpos, ypos, u0, v0)
+      ..float4(xpos, ypos + height, u0, v1)
+      ..float4(xpos + width, ypos, u1, v0)
+      ..float4(xpos + width, ypos, u1, v0)
+      ..float4(xpos, ypos + height, u0, v1)
+      ..float4(xpos + width, ypos + height, u1, v1);
 
     cursorX += xAdvance;
     cursorY += yAdvance;
@@ -108,7 +109,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
 
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
   vbo
-    ..upload(textBuffer)
+    ..upload(_textBuffer, static: false)
     ..draw(glyphCount.value * 6, vao: vao);
 }
 

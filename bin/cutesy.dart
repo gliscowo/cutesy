@@ -77,6 +77,7 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
+  final triangleBuffer = BufferBuilder();
   final triangle = GlVertexBuffer()..bind();
   final triangleVao = GlVertexArray()..bind();
   glEnableVertexAttribArray(program.attribs["aPos"]);
@@ -96,7 +97,7 @@ void main(List<String> args) {
   int frames = 0;
   int lastFps = 0;
   double passedTime = 0;
-  // glfwSwapInterval(0);
+  glfwSwapInterval(0);
 
   double triX = -100;
   double triY = -100;
@@ -132,23 +133,24 @@ void main(List<String> args) {
     glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, buffer);
 
     triangle
-      ..upload(BufferBuilder()
-        ..vertex(0, 200, 0)
-        ..color(hue, 1, 1, 1)
-        ..vertex(200, 200, 0)
-        ..color(hue + 1 / 3, 1, 1, 1)
-        ..vertex(100, 0, 0)
-        ..color(hue, 1, 1, 1))
-      ..draw(3, vao: triangleVao);
+      ..upload(triangleBuffer
+        ..rewind()
+        ..float3(0, 200, 0)
+        ..float4(hue, 1, 1, 1)
+        ..float3(200, 200, 0)
+        ..float4(hue + 1 / 3, 1, 1, 1)
+        ..float3(100, 0, 0)
+        ..float4(hue, 1, 1, 1))
+      ..draw(triangleBuffer.elements(sizeOf<Float>() * 7), vao: triangleVao);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     drawText(100, 100, .75, notSoGood, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
 
-    final fpsBuffer = "turns out the bee movie script is too long".toVisual().shape();
-    drawText(2, 0, .5, fpsBuffer, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
-    fpsBuffer.destroy();
+    // final fpsBuffer = "turns out the bee movie script is too long".toVisual().shape();
+    // drawText(2, 0, .5, fpsBuffer, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
+    // fpsBuffer.destroy();
 
     _window.nextFrame();
 
