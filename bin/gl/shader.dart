@@ -6,6 +6,8 @@ import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../cutesy.dart';
+
 class GlShader {
   final int _id;
 
@@ -32,6 +34,7 @@ class GlShader {
     glGetShaderiv(_id, GL_COMPILE_STATUS, success);
     print("Shader '${basename(source.path)}' compile success: ${success.value}");
 
+    malloc.free(sourceString);
     malloc.free(sourceArray);
     malloc.free(success);
   }
@@ -74,11 +77,9 @@ class GlProgram {
   }
 
   int _uniformLocation(String uniform) =>
-      _uniformCache.putIfAbsent(uniform, () => glGetUniformLocation(_id, uniform.toNativeUtf8()));
+      uniform.withAsNative((utf8) => _uniformCache.putIfAbsent(uniform, () => glGetUniformLocation(_id, utf8)));
 
-  int attributeLocation(String attibute) {
-    return glGetAttribLocation(_id, attibute.toNativeUtf8());
-  }
+  int attributeLocation(String attibute) => attibute.withAsNative((utf8) => glGetAttribLocation(_id, utf8));
 
   int get id => _id;
 }

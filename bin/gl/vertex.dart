@@ -111,14 +111,13 @@ class BufferBuilder {
   int elements(int vertexSizeInBytes) => _cursor ~/ vertexSizeInBytes;
 
   void _ensureCapacity(int bytes) {
-    // print("Ensuring capacity for $bytes bytes at cursor $_cursor in buffer $hashCode of size ${_data.lengthInBytes}");
-    if (_cursor + bytes > _data.lengthInBytes) {
-      print(
-          "Growing BufferBuilder $hashCode from ${_data.lengthInBytes} bytes to ${_data.lengthInBytes * 2} to fit ${_cursor + bytes} bytes");
+    if (_cursor + bytes <= _data.lengthInBytes) return;
 
-      final newData = ByteData(_data.lengthInBytes * 2);
-      newData.buffer.asUint8List().setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());
-      _data = newData;
-    }
+    print(
+        "Growing BufferBuilder $hashCode from ${_data.lengthInBytes} to ${_data.lengthInBytes * 2} bytes to fit ${_cursor + bytes}");
+
+    final newData = ByteData(_data.lengthInBytes * 2);
+    newData.buffer.asUint8List().setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());
+    _data = newData;
   }
 }

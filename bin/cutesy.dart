@@ -12,15 +12,9 @@ import 'gl/vertex.dart';
 import 'text.dart';
 import 'window.dart';
 
-typedef GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32, Int32);
-typedef GLFWcharfun = Void Function(Pointer<GLFWwindow>, Int32);
-typedef GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
 typedef GLFWerrorfun = Void Function(Int32, Pointer<Utf8>);
 
 bool _running = true;
-
-double mouseX = 0;
-double mouseY = 0;
 
 late final Window _window;
 
@@ -39,10 +33,6 @@ void main(List<String> args) {
   glfwSetErrorCallback(Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
 
   _window = Window(800, 400, "this is cursed", debug: true);
-
-  glfwSetKeyCallback(_window.handle, Pointer.fromFunction<GLFWkeyfun>(onKey));
-  glfwSetCharCallback(_window.handle, Pointer.fromFunction<GLFWcharfun>(onChar));
-  glfwSetCursorPosCallback(_window.handle, Pointer.fromFunction<GLFWcursorposfun>(onCursorPos));
 
   glfwMakeContextCurrent(_window.handle);
   attachGlErrorCallback();
@@ -91,7 +81,17 @@ void main(List<String> args) {
   double triY = -100;
 
   initTextRenderer();
-  updateCursor();
+  _nextCursor();
+
+  _window.onKey.where((event) => event.action == GLFW_PRESS).map((event) => event.key).listen((key) {
+    if (key == GLFW_KEY_ESCAPE) _running = false;
+    if (key == GLFW_KEY_F11) _window.toggleFullscreen();
+    if (key == GLFW_KEY_SPACE) _nextCursor();
+  });
+
+  _window.onChar.map(String.fromCharCode).listen((char) {
+    print("got char: $char");
+  });
 
   final notSoGood = "bruv, that's not so good !=".toVisual().shape();
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
@@ -103,8 +103,8 @@ void main(List<String> args) {
     final delta = glfwGetTime() - lastTime;
     lastTime = glfwGetTime();
 
-    triX += (mouseX - triX - 100) * delta * 7.5;
-    triY += (mouseY - triY - 100) * delta * 7.5;
+    triX += (_window.cursorX - triX - 100) * delta * 7.5;
+    triY += (_window.cursorY - triY - 100) * delta * 7.5;
 
     final transform = Matrix4.translation(Vector3(triX, triY, 0));
 
@@ -149,6 +149,16 @@ void main(List<String> args) {
   glfwTerminate();
 }
 
+extension CString on String {
+  T withAsNative<T>(T Function(Pointer<Utf8>) action) {
+    final pointer = toNativeUtf8();
+    final result = action(pointer);
+    malloc.free(pointer);
+
+    return result;
+  }
+}
+
 int _nextCursorIndex = -1;
 const _allCursors = [
   GLFW_ARROW_CURSOR,
@@ -161,7 +171,7 @@ const _allCursors = [
 
 Pointer<GLFWcursor>? _currentCursor;
 
-void updateCursor() {
+void _nextCursor() {
   if (_currentCursor != null) {
     glfwDestroyCursor(_currentCursor!);
   }
@@ -170,32 +180,6 @@ void updateCursor() {
   _currentCursor = glfwCreateStandardCursor(_allCursors[_nextCursorIndex]);
 
   glfwSetCursor(_window.handle, _currentCursor!);
-}
-
-void onKey(Pointer<GLFWwindow> window, int key, int scancode, int action, int mods) {
-  if (key == GLFW_KEY_ESCAPE) {
-    _running = false;
-  }
-
-  if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
-    _window.toggleFullscreen();
-  }
-
-  if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-    updateCursor();
-  }
-
-  print(
-      "Key input on window 0x${window.address.toRadixString(16)}:\n - key: $key\n - scancode: $scancode\n - action: ${actionString(action)}\n - mods: $mods");
-}
-
-void onChar(Pointer<GLFWwindow> window, int codepoint) {
-  print("Char input on window 0x${window.address.toRadixString(16)}: '${String.fromCharCode(codepoint)}'");
-}
-
-void onCursorPos(Pointer<GLFWwindow> window, double cursorX, double cursorY) {
-  mouseX = cursorX;
-  mouseY = cursorY;
 }
 
 String actionString(int action) {

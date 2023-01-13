@@ -3,15 +3,25 @@ import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
 import 'package:glfw/glfw.dart';
+import 'package:vector_math/vector_math.dart';
 
-typedef GLFWwindowresizefun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
-typedef GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
+import 'cutesy.dart';
+
+typedef _GLFWwindowresizefun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
+typedef _GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
+
+typedef _GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32, Int32);
+typedef _GLFWcharfun = Void Function(Pointer<GLFWwindow>, Int32);
+typedef _GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
 
 class Window {
   static final Map<int, Window> _knownWindows = {};
 
   late final Pointer<GLFWwindow> _handle;
   final StreamController<Window> _resizeListeners = StreamController.broadcast(sync: true);
+  final StreamController<int> _charInputListeners = StreamController.broadcast(sync: true);
+  final StreamController<KeyInputEvent> _keyInputListeners = StreamController.broadcast(sync: true);
+  final Vector2 _cursorPos = Vector2.zero();
 
   late int _x;
   late int _y;
@@ -36,7 +46,7 @@ class Window {
 
     if (debug) glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
-    _handle = glfwCreateWindow(width, height, title.toNativeUtf8(), nullptr, nullptr);
+    _handle = title.withAsNative((utf8) => glfwCreateWindow(width, height, utf8, nullptr, nullptr));
 
     if (_handle.address == 0) {
       glfwTerminate();
@@ -54,8 +64,11 @@ class Window {
     malloc.free(windowY);
 
     _knownWindows[_handle.address] = this;
-    glfwSetWindowSizeCallback(_handle, Pointer.fromFunction<GLFWwindowresizefun>(_onResize));
-    glfwSetWindowPosCallback(_handle, Pointer.fromFunction<GLFWwindowposfun>(_onMove));
+    glfwSetWindowSizeCallback(_handle, Pointer.fromFunction<_GLFWwindowresizefun>(_onResize));
+    glfwSetWindowPosCallback(_handle, Pointer.fromFunction<_GLFWwindowposfun>(_onMove));
+    glfwSetCursorPosCallback(_handle, Pointer.fromFunction<_GLFWcursorposfun>(_onMousePos));
+    glfwSetCharCallback(_handle, Pointer.fromFunction<_GLFWcharfun>(_onChar));
+    glfwSetKeyCallback(_handle, Pointer.fromFunction<_GLFWkeyfun>(_onKey));
   }
 
   static void _onMove(Pointer<GLFWwindow> handle, int x, int y) {
@@ -74,6 +87,28 @@ class Window {
     window._height = height;
 
     window._resizeListeners.add(window);
+  }
+
+  static void _onMousePos(Pointer<GLFWwindow> handle, double mouseX, double mouseY) {
+    if (!_knownWindows.containsKey(handle.address)) return;
+    final window = _knownWindows[handle.address]!;
+
+    window._cursorPos.x = mouseX;
+    window._cursorPos.y = mouseY;
+  }
+
+  static void _onChar(Pointer<GLFWwindow> handle, int codepoint) {
+    if (!_knownWindows.containsKey(handle.address)) return;
+    final window = _knownWindows[handle.address]!;
+
+    window._charInputListeners.add(codepoint);
+  }
+
+  static void _onKey(Pointer<GLFWwindow> handle, int key, int scancode, int action, int mods) {
+    if (!_knownWindows.containsKey(handle.address)) return;
+    final window = _knownWindows[handle.address]!;
+
+    window._keyInputListeners.add(KeyInputEvent(key, scancode, action, mods));
   }
 
   void toggleFullscreen() {
@@ -108,10 +143,22 @@ class Window {
     glfwPollEvents();
   }
 
+  double get cursorX => _cursorPos.x;
+  double get cursorY => _cursorPos.y;
+  Vector2 get cursorPos => _cursorPos.xy;
+
+  Stream<Window> get onResize => _resizeListeners.stream;
+  Stream<int> get onChar => _charInputListeners.stream;
+  Stream<KeyInputEvent> get onKey => _keyInputListeners.stream;
+
   int get x => _x;
   int get y => _y;
   int get width => _width;
   int get height => _height;
   Pointer<GLFWwindow> get handle => _handle;
-  Stream<Window> get onResize => _resizeListeners.stream;
+}
+
+class KeyInputEvent {
+  final int key, scancode, action, mods;
+  KeyInputEvent(this.key, this.scancode, this.action, this.mods);
 }

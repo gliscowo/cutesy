@@ -6,6 +6,7 @@ import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import 'cutesy.dart';
 import 'gl/shader.dart';
 import 'gl/vertex.dart';
 import 'native/freetype.dart';
@@ -36,14 +37,19 @@ extension StringDrawingExtensions on String {
   Pointer<hb_buffer_t> shape() {
     // final now = DateTime.now();
 
+    final featureFlag = "calt on".toNativeUtf8().cast<Char>();
+    final language = "en".toNativeUtf8().cast<Char>();
+
     final hbFeatures = malloc<hb_feature_t>();
-    _hb.hb_feature_from_string("calt on".toNativeUtf8().cast(), -1, hbFeatures);
+    _hb.hb_feature_from_string(featureFlag, -1, hbFeatures);
 
     final buffer = _hb.hb_buffer_create();
-    _hb.hb_buffer_add_utf8(buffer, String.fromCharCodes(logicalToVisual(this)).toNativeUtf8().cast(), -1, 0, -1);
+    String.fromCharCodes(logicalToVisual(this))
+        .withAsNative((reordered) => _hb.hb_buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
+
     _hb.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
     _hb.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
-    _hb.hb_buffer_set_language(buffer, _hb.hb_language_from_string("en".toNativeUtf8().cast(), -1));
+    _hb.hb_buffer_set_language(buffer, _hb.hb_language_from_string(language, -1));
     _hb.hb_shape(_hbFont, buffer, hbFeatures, 1);
     malloc.free(hbFeatures);
 
@@ -108,6 +114,8 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
 }
 
 void initTextRenderer() {
+  final nativeFontPath = fontPath.toNativeUtf8().cast<Char>();
+
   // FreeType
   final ft = malloc<FT_Library>();
   if (_ft.FT_Init_FreeType(ft) != 0) {
@@ -116,7 +124,7 @@ void initTextRenderer() {
   }
 
   final face = malloc<FT_Face>();
-  if (_ft.FT_New_Face(ft.value, fontPath.toNativeUtf8().cast(), 0, face) != 0) {
+  if (_ft.FT_New_Face(ft.value, nativeFontPath, 0, face) != 0) {
     print("Could not load font");
     exit(-1);
   }
@@ -125,10 +133,12 @@ void initTextRenderer() {
   _ft.FT_Set_Pixel_Sizes(_ftFace, 0, fontSize);
 
   // HarfBuzz
-  final blob = _hb.hb_blob_create_from_file(fontPath.toNativeUtf8().cast());
+  final blob = _hb.hb_blob_create_from_file(nativeFontPath);
   final hbFace = _hb.hb_face_create(blob, 0);
   _hbFont = _hb.hb_font_create(hbFace);
   _hb.hb_font_set_scale(_hbFont, 64, 64);
+
+  malloc.free(nativeFontPath);
 
   // Prepare glyph atlas
 
