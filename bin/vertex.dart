@@ -86,9 +86,9 @@ class BufferBuilder {
     _ensureCapacity(_float32Size * 3);
 
     _data
-      ..setFloat32(_cursor + _float32Size * 0, a, Endian.little)
-      ..setFloat32(_cursor + _float32Size * 1, b, Endian.little)
-      ..setFloat32(_cursor + _float32Size * 2, c, Endian.little);
+      ..setFloat32(_cursor + _float32Size * 0, a, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 1, b, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 2, c, Endian.host);
     _cursor += _float32Size * 3;
   }
 
@@ -97,10 +97,10 @@ class BufferBuilder {
     _ensureCapacity(_float32Size * 4);
 
     _data
-      ..setFloat32(_cursor + _float32Size * 0, a, Endian.little)
-      ..setFloat32(_cursor + _float32Size * 1, b, Endian.little)
-      ..setFloat32(_cursor + _float32Size * 2, c, Endian.little)
-      ..setFloat32(_cursor + _float32Size * 3, d, Endian.little);
+      ..setFloat32(_cursor + _float32Size * 0, a, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 1, b, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 2, c, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 3, d, Endian.host);
     _cursor += _float32Size * 4;
   }
 
