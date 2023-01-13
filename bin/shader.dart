@@ -1,11 +1,10 @@
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
-import 'package:vector_math/vector_math_64.dart';
+import 'package:vector_math/vector_math.dart';
 
 class GlShader {
   final int _id;
@@ -65,8 +64,7 @@ class GlProgram {
   void use() => glUseProgram(_id);
 
   void uniformMat4(String uniform, Matrix4 value) {
-    final floats = Float32List.fromList(value.storage);
-    _floatBuffer.asTypedList(floats.length).setRange(0, floats.length, floats);
+    _floatBuffer.asTypedList(value.storage.length).setRange(0, value.storage.length, value.storage);
     glUniformMatrix4fv(_uniformLocation(uniform), 1, GL_FALSE, _floatBuffer);
   }
 
