@@ -6,17 +6,16 @@ import 'package:glfw/glfw.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'shader.dart';
+import 'gl/debug.dart';
+import 'gl/shader.dart';
+import 'gl/vertex.dart';
 import 'text.dart';
-import 'vertex.dart';
 import 'window.dart';
 
 typedef GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32, Int32);
 typedef GLFWcharfun = Void Function(Pointer<GLFWwindow>, Int32);
 typedef GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
 typedef GLFWerrorfun = Void Function(Int32, Pointer<Utf8>);
-
-typedef GlErrorCallback = Void Function(Int32, Int32, Int32, Int32, Int32, Pointer<Utf8>, Pointer<Void>);
 
 bool _running = true;
 
@@ -27,11 +26,6 @@ late final Window _window;
 
 void onGlfwError(int errorCode, Pointer<Utf8> description) {
   print("GLFW Error: ${description.toDartString()} ($errorCode)");
-}
-
-void onGlError(int source, int type, int id, int severity, int length, Pointer<Utf8> message, Pointer<Void> userParam) {
-  print(
-      "OpenGL Debug Message, type ${messageTypeString(type)} severity ${severityString(severity)}: ${message.toDartString()}");
 }
 
 void main(List<String> args) {
@@ -51,10 +45,7 @@ void main(List<String> args) {
   glfwSetCursorPosCallback(_window.handle, Pointer.fromFunction<GLFWcursorposfun>(onCursorPos));
 
   glfwMakeContextCurrent(_window.handle);
-
-  glEnable(GL_DEBUG_OUTPUT);
-  glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-  glDebugMessageCallback(Pointer.fromFunction<GlErrorCallback>(onGlError), nullptr);
+  attachGlErrorCallback();
 
   final program = GlProgram([
     GlShader.vertex(File("resources/shader/position.vert")),
@@ -211,28 +202,6 @@ String actionString(int action) {
   if (action == GLFW_PRESS) return "PRESS";
   if (action == GLFW_RELEASE) return "RELEASE";
   if (action == GLFW_REPEAT) return "REPEAT";
-
-  return "UNKNOWN";
-}
-
-String severityString(int severity) {
-  if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return "NOTIFICATION";
-  if (severity == GL_DEBUG_SEVERITY_LOW) return "LOW";
-  if (severity == GL_DEBUG_SEVERITY_MEDIUM) return "MEDIUM";
-  if (severity == GL_DEBUG_SEVERITY_HIGH) return "HIGH";
-
-  return "UNKNOWN";
-}
-
-String messageTypeString(int messageType) {
-  if (messageType == GL_DEBUG_TYPE_MARKER) return "MARKER";
-  if (messageType == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR) return "DEPRECATED_BEHAVIOR";
-  if (messageType == GL_DEBUG_TYPE_ERROR) return "ERROR";
-  if (messageType == GL_DEBUG_TYPE_OTHER) return "OTHER";
-  if (messageType == GL_DEBUG_TYPE_PERFORMANCE) return "PERFORMANCE";
-  if (messageType == GL_DEBUG_TYPE_PORTABILITY) return "PORTABILITY";
-  if (messageType == GL_DEBUG_TYPE_PUSH_GROUP) return "PUSH_GROUP";
-  if (messageType == GL_DEBUG_TYPE_POP_GROUP) return "POP_GROUP";
 
   return "UNKNOWN";
 }

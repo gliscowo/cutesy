@@ -6,10 +6,10 @@ import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'lib/freetype.dart';
-import 'lib/harfbuzz.dart';
-import 'shader.dart';
-import 'vertex.dart';
+import 'gl/shader.dart';
+import 'gl/vertex.dart';
+import 'native/freetype.dart';
+import 'native/harfbuzz.dart';
 
 class Glyph {
   final Vector2 uv;
