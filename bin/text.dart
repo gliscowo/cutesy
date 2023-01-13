@@ -1,6 +1,5 @@
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:bidi/bidi.dart';
 import 'package:ffi/ffi.dart';
@@ -63,13 +62,8 @@ final _textBuffer = BufferBuilder(4096);
 void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, GlVertexBuffer vbo,
     GlVertexArray vao, Matrix4 projection, Vector3 color) {
   program.use();
-  glUniform3f(program.uniforms["uTextColor"], color.r, color.g, color.b);
-
-  final projData = Float32List.fromList(projection.storage);
-  final buffer = malloc.allocate<Float>(projData.lengthInBytes);
-  buffer.asTypedList(projData.length).setRange(0, projData.length, projData);
-  glUniformMatrix4fv(program.uniforms["uProjection"], 1, GL_FALSE, buffer);
-  malloc.free(buffer);
+  program.uniform3vf("uTextColor", color);
+  program.uniformMat4("uProjection", projection);
 
   glActiveTexture(GL_TEXTURE0);
 
@@ -145,10 +139,8 @@ void initTextRenderer() {
 
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
 
-  final emptyBuffer = calloc<Uint8>(1024 * 1024);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1024, 1024, 0, GL_RED, GL_UNSIGNED_BYTE, emptyBuffer);
-  calloc.free(emptyBuffer);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1024, 1024, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);

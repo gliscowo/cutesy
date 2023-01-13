@@ -1,6 +1,5 @@
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:glfw/glfw.dart';
@@ -62,9 +61,6 @@ void main(List<String> args) {
     GlShader.fragment(File("resources/shader/position.frag")),
   ]);
 
-  final projectionLocation = program.uniforms["uProjection"];
-  final transformLocation = program.uniforms["uTransform"];
-
   final textProgram = GlProgram([
     GlShader.vertex(File("resources/shader/text.vert")),
     GlShader.fragment(File("resources/shader/text.frag")),
@@ -80,18 +76,19 @@ void main(List<String> args) {
   final triangleBuffer = BufferBuilder();
   final triangle = GlVertexBuffer()..bind();
   final triangleVao = GlVertexArray()..bind();
-  glEnableVertexAttribArray(program.attribs["aPos"]);
-  glVertexAttribPointer(program.attribs["aPos"], 3, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 0);
-  glEnableVertexAttribArray(program.attribs["aColor"]);
-  glVertexAttribPointer(program.attribs["aColor"], 4, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 3 * sizeOf<Float>());
+  glEnableVertexAttribArray(program.attributeLocation("aPos"));
+  glVertexAttribPointer(program.attributeLocation("aPos"), 3, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 0);
+  glEnableVertexAttribArray(program.attributeLocation("aColor"));
+  glVertexAttribPointer(
+      program.attributeLocation("aColor"), 4, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 3 * sizeOf<Float>());
 
   final aaaa = GlVertexBuffer()..bind();
   final aaaaVao = GlVertexArray()..bind();
-  glEnableVertexAttribArray(textProgram.attribs["aVertex"]);
-  glVertexAttribPointer(textProgram.attribs["aVertex"], 4, GL_FLOAT, GL_FALSE, 4 * sizeOf<Float>(), 0);
+  glEnableVertexAttribArray(textProgram.attributeLocation("aVertex"));
+  glVertexAttribPointer(textProgram.attributeLocation("aVertex"), 4, GL_FLOAT, GL_FALSE, 4 * sizeOf<Float>(), 0);
 
   textProgram.use();
-  glUniform3f(textProgram.uniforms["uTextColor"], 1, 0, 1);
+  program.uniform3f("uTextColor", 1, 0, 1);
 
   double lastTime = glfwGetTime();
   int frames = 0;
@@ -119,18 +116,10 @@ void main(List<String> args) {
     triY += (mouseY - triY - 100) * delta * 7.5;
 
     final transform = Matrix4.translation(Vector3(triX, triY, 0));
-    var data = Float32List.fromList(transform.storage);
-
-    final buffer = malloc.allocate<Float>(data.lengthInBytes);
-    buffer.asTypedList(data.length).setRange(0, data.length, data);
 
     program.use();
-    glUniformMatrix4fv(transformLocation, 1, GL_FALSE, buffer);
-
-    data = Float32List.fromList(projection.storage);
-    buffer.asTypedList(data.length).setRange(0, data.length, data);
-
-    glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, buffer);
+    program.uniformMat4("uTransform", transform);
+    program.uniformMat4("uProjection", projection);
 
     triangle
       ..upload(triangleBuffer
@@ -167,14 +156,6 @@ void main(List<String> args) {
   }
 
   glfwTerminate();
-}
-
-extension Based on Allocator {
-  void withAlloc<T extends NativeType>(void Function(Pointer<T>) action, int size, [int count = 1]) {
-    final pointer = allocate<T>(size * count);
-    action(pointer);
-    free(pointer);
-  }
 }
 
 int _nextCursorIndex = -1;

@@ -1,11 +1,11 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
-
-import 'cutesy.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 class GlShader {
   final int _id;
@@ -39,9 +39,11 @@ class GlShader {
 }
 
 class GlProgram {
+  static final Pointer<Float> _floatBuffer = malloc<Float>(16);
+  // static final Pointer<Int> _intBuffer = malloc<Float>(16);
+
   final int _id;
-  late final SubscriptSupplier<String, int> _attribs;
-  late final SubscriptSupplier<String, int> _uniforms;
+  final Map<String, int> _uniformCache = {};
 
   GlProgram(List<GlShader> shaders) : _id = glCreateProgram() {
     for (final shader in shaders) {
@@ -54,25 +56,31 @@ class GlProgram {
       glDeleteShader(shader.id);
     }
 
-    malloc.withAlloc<Int32>((success) {
-      glGetProgramiv(_id, GL_LINK_STATUS, success);
-      print("Program '$_id' link success: ${success.value}");
-    }, sizeOf<Int32>());
-
-    _attribs = SubscriptSupplier._((String name) => glGetAttribLocation(_id, name.toNativeUtf8()));
-    _uniforms = SubscriptSupplier._((String name) => glGetUniformLocation(_id, name.toNativeUtf8()));
+    final success = malloc<Int32>();
+    glGetProgramiv(_id, GL_LINK_STATUS, success);
+    print("Program '$_id' link success: ${success.value}");
+    malloc.free(success);
   }
 
-  SubscriptSupplier get attribs => _attribs;
-  SubscriptSupplier get uniforms => _uniforms;
-  int get id => _id;
-
   void use() => glUseProgram(_id);
-}
 
-class SubscriptSupplier<T, U> {
-  final U Function(T) _getter;
-  SubscriptSupplier._(this._getter);
+  void uniformMat4(String uniform, Matrix4 value) {
+    final floats = Float32List.fromList(value.storage);
+    _floatBuffer.asTypedList(floats.length).setRange(0, floats.length, floats);
+    glUniformMatrix4fv(_uniformLocation(uniform), 1, GL_FALSE, _floatBuffer);
+  }
 
-  U operator [](T query) => _getter(query);
+  void uniform3vf(String uniform, Vector3 vec) => uniform3f(uniform, vec.x, vec.y, vec.z);
+  void uniform3f(String uniform, double x, double y, double z) {
+    glUniform3f(_uniformLocation(uniform), x, y, z);
+  }
+
+  int _uniformLocation(String uniform) =>
+      _uniformCache.putIfAbsent(uniform, () => glGetUniformLocation(_id, uniform.toNativeUtf8()));
+
+  int attributeLocation(String attibute) {
+    return glGetAttribLocation(_id, attibute.toNativeUtf8());
+  }
+
+  int get id => _id;
 }
