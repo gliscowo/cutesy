@@ -55,7 +55,7 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final triangle = VertexRenderObject(HsvVertexBuilder.descriptor, program);
+  final triangle = VertexRenderObject(hsvVertexDescriptor, program);
 
   textProgram.use();
   program.uniform3f("uTextColor", 1, 0, 1);
@@ -95,21 +95,18 @@ void main(List<String> args) {
     triX += (_window.cursorX - triX - 100) * delta * 7.5;
     triY += (_window.cursorY - triY - 100) * delta * 7.5;
 
-    final transform = Matrix4.translation(Vector3(triX, triY, 0));
+    program
+      ..use()
+      ..uniformMat4("uTransform", Matrix4.translation(Vector3(triX, triY, 0)))
+      ..uniformMat4("uProjection", projection);
 
-    program.use();
-    program.uniformMat4("uTransform", transform);
-    program.uniformMat4("uProjection", projection);
-
-    triangle.builder
-      ..reset()
+    triangle
+      ..clear()
       ..vertex(Vector3(0, 200, 0), Vector4(hue, 1, 1, 1))
       ..vertex(Vector3(200, 200, 0), Vector4(hue + 1 / 3, 1, 1, 1))
       ..vertex(Vector3(100, 0, 0), Vector4(hue, 1, 1, 1));
 
-    triangle
-      ..upload()
-      ..draw();
+    triangle.uploadAndDraw(dynamic: true);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -117,7 +114,7 @@ void main(List<String> args) {
     drawText(100, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
 
     // final fpsBuffer = "turns out the bee movie script is too long".toVisual().shape();
-    // drawText(2, 0, .5, fpsBuffer, textProgram, aaaa, aaaaVao, projection, Vector3.all(1));
+    // drawText(2, 0, .5, fpsBuffer, textProgram, projection, Vector3.all(1));
     // fpsBuffer.destroy();
 
     _window.nextFrame();

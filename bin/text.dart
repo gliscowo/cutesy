@@ -65,7 +65,7 @@ extension DestoryBuffer on Pointer<hb_buffer_t> {
   void destroy() => _hb.hb_buffer_destroy(this);
 }
 
-VertexRenderObject<TextVertexBuilder>? _textRenderObject;
+VertexRenderObject<TextVertexFunction>? _textRenderObject;
 
 void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, Matrix4 projection,
     Vector3 color) {
@@ -80,8 +80,8 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
   final glyphPos = _hb.hb_buffer_get_glyph_positions(hbBuffer, glyphCount);
 
   int cursorX = 0, cursorY = 0;
-  _textRenderObject ??= VertexRenderObject(TextVertexBuilder.descriptor, program);
-  _textRenderObject!.builder.reset();
+  _textRenderObject ??= VertexRenderObject(textVertexDescriptor, program);
+  _textRenderObject!.clear();
 
   for (int i = 0; i < glyphCount.value; i++) {
     int codepoint = glyphInfo[i].codepoint;
@@ -98,7 +98,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
     final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
     final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
 
-    _textRenderObject!.builder
+    _textRenderObject!
       ..vertex(xpos, ypos, u0, v0)
       ..vertex(xpos, ypos + height, u0, v1)
       ..vertex(xpos + width, ypos, u1, v0)
@@ -111,9 +111,7 @@ void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, G
   }
 
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
-  _textRenderObject!
-    ..upload(static: false)
-    ..draw();
+  _textRenderObject!.uploadAndDraw(dynamic: true);
 }
 
 void initTextRenderer() {

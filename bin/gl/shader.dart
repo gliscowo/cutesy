@@ -64,6 +64,7 @@ class GlProgram {
     malloc.free(success);
   }
 
+  int get id => _id;
   void use() => glUseProgram(_id);
 
   void uniformMat4(String uniform, Matrix4 value) {
@@ -77,9 +78,7 @@ class GlProgram {
   }
 
   int _uniformLocation(String uniform) =>
-      uniform.withAsNative((utf8) => _uniformCache.putIfAbsent(uniform, () => glGetUniformLocation(_id, utf8)));
+      _uniformCache.putIfAbsent(uniform, () => uniform.withAsNative((utf8) => glGetUniformLocation(_id, utf8)));
 
   int getAttributeLocation(String attibute) => attibute.withAsNative((utf8) => glGetAttribLocation(_id, utf8));
-
-  int get id => _id;
 }

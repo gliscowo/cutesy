@@ -1,57 +1,62 @@
-import 'dart:ffi';
-
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'vertex_buffer.dart';
 
-class VertexDescriptor<VB extends VertexBuilder> {
-  final void Function(int Function(String) attributeLookup) _attributeBuilder;
-  final int _vertexSize;
-  final VB Function(BufferBuilder) _builderFactory;
+class VertexDescriptor<VertexFunction extends Function> {
+  final VertexFunction Function(BufferBuilder) _builderFactory;
+  final List<_VertexAttribute> _attributes = [];
+  int _vertexSize = 0;
 
-  VertexDescriptor(this._attributeBuilder, this._vertexSize, this._builderFactory);
-
-  void prepareAttributes(int Function(String) attributeLookup) {
-    _attributeBuilder(attributeLookup);
+  VertexDescriptor(void Function(void Function(String, VertexElement, int)) attributeSetup, this._builderFactory) {
+    attributeSetup((name, element, count) {
+      _attributes.add(_VertexAttribute(name, element, count, _vertexSize));
+      _vertexSize += element.size * count;
+    });
   }
 
-  VB createBuilder(BufferBuilder buffer) => _builderFactory(buffer);
+  void prepareAttributes(int Function(String) attributeLookup) {
+    for (final attr in _attributes) {
+      final location = attributeLookup(attr.name);
+
+      glEnableVertexAttribArray(location);
+      glVertexAttribPointer(location, attr.count, attr.element.glType, GL_FALSE, _vertexSize, attr.offset);
+    }
+  }
+
+  VertexFunction createBuilder(BufferBuilder buffer) => _builderFactory(buffer);
   int get vertexSize => _vertexSize;
 }
 
-abstract class VertexBuilder {
-  final BufferBuilder _buffer;
-  VertexBuilder(this._buffer);
+class _VertexAttribute {
+  final String name;
+  final VertexElement element;
+  final int count, offset;
 
-  void reset() => _buffer.rewind();
+  _VertexAttribute(this.name, this.element, this.count, this.offset);
 }
 
-class HsvVertexBuilder extends VertexBuilder {
-  static VertexDescriptor<HsvVertexBuilder> descriptor = VertexDescriptor((attributeLookup) {
-    glEnableVertexAttribArray(attributeLookup("aPos"));
-    glVertexAttribPointer(attributeLookup("aPos"), 3, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 0);
-    glEnableVertexAttribArray(attributeLookup("aColor"));
-    glVertexAttribPointer(attributeLookup("aColor"), 4, GL_FLOAT, GL_FALSE, 7 * sizeOf<Float>(), 3 * sizeOf<Float>());
-  }, 7 * sizeOf<Float>(), (buffer) => HsvVertexBuilder(buffer));
+enum VertexElement {
+  float(4, GL_FLOAT);
 
-  HsvVertexBuilder(super.buffer);
-
-  void vertex(Vector3 pos, Vector4 color) {
-    _buffer.vec3(pos);
-    _buffer.vec4(color);
-  }
+  final int size, glType;
+  const VertexElement(this.size, this.glType);
 }
 
-class TextVertexBuilder extends VertexBuilder {
-  static VertexDescriptor<TextVertexBuilder> descriptor = VertexDescriptor((attributeLookup) {
-    glEnableVertexAttribArray(attributeLookup("aVertex"));
-    glVertexAttribPointer(attributeLookup("aVertex"), 4, GL_FLOAT, GL_FALSE, 4 * sizeOf<Float>(), 0);
-  }, 4 * sizeOf<Float>(), (buffer) => TextVertexBuilder(buffer));
+typedef HsvVertexFunction = void Function(Vector3, Vector4);
+final VertexDescriptor<HsvVertexFunction> hsvVertexDescriptor = VertexDescriptor(
+  (attribute) {
+    attribute("aPos", VertexElement.float, 3);
+    attribute("aColor", VertexElement.float, 4);
+  },
+  (buffer) => (pos, color) {
+    buffer.vec3(pos);
+    buffer.vec4(color);
+  },
+);
 
-  TextVertexBuilder(super.buffer);
-
-  void vertex(double x, double y, double u, double v) {
-    _buffer.float4(x, y, u, v);
-  }
-}
+typedef TextVertexFunction = void Function(double, double, double, double);
+final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
+  (attribute) => attribute("aVertex", VertexElement.float, 4),
+  (buffer) => buffer.float4,
+);
