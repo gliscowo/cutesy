@@ -14,7 +14,7 @@ import '../native/freetype.dart';
 import '../native/harfbuzz.dart';
 import 'text.dart';
 
-const fontPath = "resources/font/CascadiaCode_Regular.otf";
+const fontPath = "resources/font/NotoSansKR-Regular.otf";
 const fontSize = 36;
 
 final _glyphs = <int, Glyph>{};
@@ -55,6 +55,7 @@ extension StringDrawingExtensions on String {
     _hb.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
     _hb.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
     _hb.hb_buffer_set_language(buffer, _hb.hb_language_from_string(language, -1));
+    _hb.hb_buffer_set_cluster_level(buffer, hb_buffer_cluster_level_t.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
     _hb.hb_shape(_hbFont, buffer, hbFeatures, 1);
     malloc.free(hbFeatures);
 
@@ -77,7 +78,7 @@ void drawText(double x, double y, double scale, Text text, GlProgram program, Ma
   _textRenderObject.clear();
 
   for (final shapedGlyph in text.glyphs) {
-    final glyph = _getGlyph(shapedGlyph.codepoint);
+    final glyph = _getGlyph(shapedGlyph.index);
     final glyphColor = shapedGlyph.style.color?.asVector().rgb ?? color;
 
     final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearing.x * scale;

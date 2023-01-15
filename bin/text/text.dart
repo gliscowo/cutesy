@@ -63,8 +63,8 @@ class Text {
 }
 
 class ShapedGlyph {
-  final int codepoint;
+  final int index;
   final Vector2 position;
   final TextStyle style;
-  ShapedGlyph._(this.codepoint, this.position, this.style);
+  ShapedGlyph._(this.index, this.position, this.style);
 }
