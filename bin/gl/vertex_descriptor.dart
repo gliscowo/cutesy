@@ -3,6 +3,38 @@ import 'package:vector_math/vector_math.dart';
 
 import 'vertex_buffer.dart';
 
+enum VertexElement {
+  float(4, GL_FLOAT);
+
+  final int size, glType;
+  const VertexElement(this.size, this.glType);
+}
+
+typedef PosColorVertexFunction = void Function(Vector3, Vector4);
+final VertexDescriptor<PosColorVertexFunction> posColorVertexDescriptor = VertexDescriptor(
+  (attribute) {
+    attribute("aPos", VertexElement.float, 3);
+    attribute("aColor", VertexElement.float, 4);
+  },
+  (buffer) => (pos, color) {
+    buffer.vec3(pos);
+    buffer.vec4(color);
+  },
+);
+
+typedef TextVertexFunction = void Function(double, double, double, double, Vector3);
+final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
+  (attribute) {
+    attribute("aPos", VertexElement.float, 2);
+    attribute("aUv", VertexElement.float, 2);
+    attribute("aColor", VertexElement.float, 3);
+  },
+  (buffer) => (x, y, u, v, color) {
+    buffer.float4(x, y, u, v);
+    buffer.float3(color.r, color.g, color.b);
+  },
+);
+
 class VertexDescriptor<VertexFunction extends Function> {
   final VertexFunction Function(BufferBuilder) _builderFactory;
   final List<_VertexAttribute> _attributes = [];
@@ -35,28 +67,3 @@ class _VertexAttribute {
 
   _VertexAttribute(this.name, this.element, this.count, this.offset);
 }
-
-enum VertexElement {
-  float(4, GL_FLOAT);
-
-  final int size, glType;
-  const VertexElement(this.size, this.glType);
-}
-
-typedef HsvVertexFunction = void Function(Vector3, Vector4);
-final VertexDescriptor<HsvVertexFunction> hsvVertexDescriptor = VertexDescriptor(
-  (attribute) {
-    attribute("aPos", VertexElement.float, 3);
-    attribute("aColor", VertexElement.float, 4);
-  },
-  (buffer) => (pos, color) {
-    buffer.vec3(pos);
-    buffer.vec4(color);
-  },
-);
-
-typedef TextVertexFunction = void Function(double, double, double, double);
-final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
-  (attribute) => attribute("aVertex", VertexElement.float, 4),
-  (buffer) => buffer.float4,
-);

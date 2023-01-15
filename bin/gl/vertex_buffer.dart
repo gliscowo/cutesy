@@ -31,10 +31,6 @@ class VertexRenderObject<VF extends Function> {
     vertex = descriptor.createBuilder(_buffer);
   }
 
-  void uploadAndDraw({bool dynamic = false}) => this
-    ..upload(dynamic: dynamic)
-    ..draw();
-
   void upload({bool dynamic = false}) {
     _vbo.upload(_buffer, dynamic: dynamic);
   }
@@ -44,7 +40,7 @@ class VertexRenderObject<VF extends Function> {
   }
 
   void draw() {
-    _vbo.draw(_buffer._cursor ~/ _descriptor.vertexSize, vao: _vao);
+    _vao.draw(_buffer._cursor ~/ _descriptor.vertexSize);
   }
 }
 
@@ -56,15 +52,6 @@ class GlVertexBuffer {
     glGenBuffers(1, idPointer);
     _id = idPointer.value;
     malloc.free(idPointer);
-  }
-
-  void draw(int count, {required GlVertexArray? vao, GlProgram? program}) {
-    if (program != null) program.use();
-    if (vao != null) vao.bind();
-
-    glDrawArrays(GL_TRIANGLES, 0, count);
-
-    if (vao != null) vao.unbind();
   }
 
   void bind() {
@@ -102,6 +89,12 @@ class GlVertexArray {
     final idPointer = calloc<Uint32>();
     glGenVertexArrays(1, idPointer);
     _id = idPointer.value;
+  }
+
+  void draw(int count) {
+    bind();
+    glDrawArrays(GL_TRIANGLES, 0, count);
+    unbind();
   }
 
   void bind() {

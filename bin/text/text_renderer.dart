@@ -6,19 +6,13 @@ import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'cutesy.dart';
-import 'gl/shader.dart';
-import 'gl/vertex_buffer.dart';
-import 'gl/vertex_descriptor.dart';
-import 'native/freetype.dart';
-import 'native/harfbuzz.dart';
-
-class Glyph {
-  final Vector2 uv;
-  final Vector2 size;
-  final Vector2 bearing;
-  Glyph(this.uv, this.size, this.bearing);
-}
+import '../cutesy.dart';
+import '../gl/shader.dart';
+import '../gl/vertex_buffer.dart';
+import '../gl/vertex_descriptor.dart';
+import '../native/freetype.dart';
+import '../native/harfbuzz.dart';
+import 'text.dart';
 
 const fontPath = "resources/font/CascadiaCode_Regular.otf";
 const fontSize = 36;
@@ -32,12 +26,23 @@ late final Pointer<hb_font_t> _hbFont;
 
 late final int glyphTexture;
 
+HarfbuzzLibrary get harfbuzz => _hb;
+
+class Glyph {
+  final Vector2 uv;
+  final Vector2 size;
+  final Vector2 bearing;
+  Glyph(this.uv, this.size, this.bearing);
+}
+
 extension StringDrawingExtensions on String {
   String toVisual() => String.fromCharCodes(logicalToVisual(this));
 
+  /// Create a native HarfBuzz buffer, fill it
+  /// with this string and do text shaping
+  ///
+  /// The returned buffer is ready for rendering
   Pointer<hb_buffer_t> shape() {
-    // final now = DateTime.now();
-
     final featureFlag = "calt on".toNativeUtf8().cast<Char>();
     final language = "en".toNativeUtf8().cast<Char>();
 
@@ -45,8 +50,7 @@ extension StringDrawingExtensions on String {
     _hb.hb_feature_from_string(featureFlag, -1, hbFeatures);
 
     final buffer = _hb.hb_buffer_create();
-    String.fromCharCodes(logicalToVisual(this))
-        .withAsNative((reordered) => _hb.hb_buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
+    withAsNative((reordered) => _hb.hb_buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
 
     _hb.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
     _hb.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
@@ -54,67 +58,55 @@ extension StringDrawingExtensions on String {
     _hb.hb_shape(_hbFont, buffer, hbFeatures, 1);
     malloc.free(hbFeatures);
 
-    // print(
-    //     "took ${(DateTime.now().microsecondsSinceEpoch - now.microsecondsSinceEpoch) / 1000}ms to shape ${text.length} chars");
-
     return buffer;
   }
 }
 
-extension DestoryBuffer on Pointer<hb_buffer_t> {
+extension DestroyBuffer on Pointer<hb_buffer_t> {
+  /// Destroy the native buffer
+  /// associated with this pointer
   void destroy() => _hb.hb_buffer_destroy(this);
 }
 
-VertexRenderObject<TextVertexFunction>? _textRenderObject;
+late VertexRenderObject<TextVertexFunction> _textRenderObject;
 
-void drawText(double x, double y, double scale, Pointer<hb_buffer_t> hbBuffer, GlProgram program, Matrix4 projection,
-    Vector3 color) {
+void drawText(double x, double y, double scale, Text text, GlProgram program, Matrix4 projection, Vector3 color) {
   program.use();
-  program.uniform3vf("uTextColor", color);
   program.uniformMat4("uProjection", projection);
 
-  glActiveTexture(GL_TEXTURE0);
+  _textRenderObject.clear();
 
-  final glyphCount = malloc<UnsignedInt>();
-  final glyphInfo = _hb.hb_buffer_get_glyph_infos(hbBuffer, glyphCount);
-  final glyphPos = _hb.hb_buffer_get_glyph_positions(hbBuffer, glyphCount);
+  for (final shapedGlyph in text.glyphs) {
+    final glyph = _getGlyph(shapedGlyph.codepoint);
+    final glyphColor = shapedGlyph.style.color?.asVector().rgb ?? color;
 
-  int cursorX = 0, cursorY = 0;
-  _textRenderObject ??= VertexRenderObject(textVertexDescriptor, program);
-  _textRenderObject!.clear();
-
-  for (int i = 0; i < glyphCount.value; i++) {
-    int codepoint = glyphInfo[i].codepoint;
-    int xOffset = (glyphPos[i].x_offset / 64 * fontSize * scale).round();
-    int yOffset = (glyphPos[i].y_offset / 64 * fontSize * scale).round();
-    int xAdvance = (glyphPos[i].x_advance / 64 * fontSize * scale).round();
-    int yAdvance = (glyphPos[i].y_advance / 64 * fontSize * scale).round();
-
-    final glyph = _getGlyph(codepoint);
-    final xpos = x + cursorX + xOffset + glyph.bearing.x * scale;
-    final ypos = y + cursorY + yOffset + (fontSize - glyph.bearing.y) * scale;
+    final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearing.x * scale;
+    final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (fontSize - glyph.bearing.y) * scale;
     final width = glyph.size.x * scale, height = glyph.size.y * scale;
 
     final u0 = (glyph.uv.x / 1024), u1 = (glyph.uv.x / 1024) + (glyph.size.x / 1024);
     final v0 = (glyph.uv.y / 1024), v1 = (glyph.uv.y / 1024) + (glyph.size.y / 1024);
 
-    _textRenderObject!
-      ..vertex(xpos, ypos, u0, v0)
-      ..vertex(xpos, ypos + height, u0, v1)
-      ..vertex(xpos + width, ypos, u1, v0)
-      ..vertex(xpos + width, ypos, u1, v0)
-      ..vertex(xpos, ypos + height, u0, v1)
-      ..vertex(xpos + width, ypos + height, u1, v1);
-
-    cursorX += xAdvance;
-    cursorY += yAdvance;
+    _textRenderObject
+      ..vertex(xPos, yPos, u0, v0, glyphColor)
+      ..vertex(xPos, yPos + height, u0, v1, glyphColor)
+      ..vertex(xPos + width, yPos, u1, v0, glyphColor)
+      ..vertex(xPos + width, yPos, u1, v0, glyphColor)
+      ..vertex(xPos, yPos + height, u0, v1, glyphColor)
+      ..vertex(xPos + width, yPos + height, u1, v1, glyphColor);
   }
 
+  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, glyphTexture);
-  _textRenderObject!.uploadAndDraw(dynamic: true);
+
+  _textRenderObject
+    ..upload(dynamic: true)
+    ..draw();
 }
 
-void initTextRenderer() {
+void initTextRenderer(GlProgram program) {
+  _textRenderObject = VertexRenderObject(textVertexDescriptor, program, initialBufferSize: 4096);
+
   final nativeFontPath = fontPath.toNativeUtf8().cast<Char>();
 
   // FreeType
