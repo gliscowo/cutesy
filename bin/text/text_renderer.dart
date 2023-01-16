@@ -55,8 +55,8 @@ class Font {
       throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
     }
 
-    if (_nextGlyphX + _ftFace.ref.glyph.ref.bitmap.width >= 1024) {
-      _nextGlyphY += _ftFace.ref.glyph.ref.bitmap.rows;
+    if (_nextGlyphX + _ftFace.ref.glyph.ref.bitmap.width + 1 >= 1024) {
+      _nextGlyphY += _ftFace.ref.glyph.ref.bitmap.rows + 1;
       _nextGlyphX = 0;
     }
 
@@ -68,7 +68,7 @@ class Font {
     glTexSubImage2D(GL_TEXTURE_2D, 0, glyphX, glyphY, _ftFace.ref.glyph.ref.bitmap.width,
         _ftFace.ref.glyph.ref.bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
 
-    _nextGlyphX += _ftFace.ref.glyph.ref.bitmap.width;
+    _nextGlyphX += _ftFace.ref.glyph.ref.bitmap.width + 1;
 
     return _glyphs[index] = Glyph(
       _glyphTextures.first,
