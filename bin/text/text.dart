@@ -1,9 +1,12 @@
 import 'dart:ffi';
 
+import 'package:bidi/bidi.dart';
 import 'package:ffi/ffi.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 import '../color.dart';
+import '../cutesy.dart';
+import '../native/harfbuzz.dart';
 import 'text_renderer.dart';
 
 class StyledString {
@@ -29,15 +32,31 @@ class Text {
   }
 
   List<ShapedGlyph> get glyphs {
-    if (_shapedGlyphs.isEmpty) _shape();
+    // if (_shapedGlyphs.isEmpty) _shape();
     return _shapedGlyphs;
   }
 
-  void _shape() {
+  void shape(Font font, Font boldFont) {
     int cursorX = 0, cursorY = 0;
 
     for (final segment in _segments) {
-      final buffer = segment.content.toVisual().shape();
+      final featureFlag = "calt on".toNativeUtf8().cast<Char>();
+      final language = "en".toNativeUtf8().cast<Char>();
+
+      final hbFeatures = malloc<hb_feature_t>();
+      harfbuzz.hb_feature_from_string(featureFlag, -1, hbFeatures);
+
+      final buffer = harfbuzz.hb_buffer_create();
+      String.fromCharCodes(logicalToVisual(segment.content))
+          .withAsNative((reordered) => harfbuzz.hb_buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
+
+      harfbuzz.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
+      harfbuzz.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
+      harfbuzz.hb_buffer_set_language(buffer, harfbuzz.hb_language_from_string(language, -1));
+      harfbuzz.hb_buffer_set_cluster_level(
+          buffer, hb_buffer_cluster_level_t.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
+      harfbuzz.hb_shape(segment.style.bold ? boldFont.hbFont : font.hbFont, buffer, hbFeatures, 1);
+      malloc.free(hbFeatures);
 
       final glpyhCount = malloc<UnsignedInt>();
       final glyphInfo = harfbuzz.hb_buffer_get_glyph_infos(buffer, glpyhCount);
@@ -45,6 +64,7 @@ class Text {
 
       for (var i = 0; i < glpyhCount.value; i++) {
         _shapedGlyphs.add(ShapedGlyph._(
+          segment.style.bold ? boldFont : font,
           glyphInfo[i].codepoint,
           Vector2(
             cursorX + glyphPos[i].x_offset.toDouble(),
@@ -57,14 +77,15 @@ class Text {
         cursorY += glyphPos[i].y_advance;
       }
 
-      buffer.destroy();
+      harfbuzz.hb_buffer_destroy(buffer);
     }
   }
 }
 
 class ShapedGlyph {
+  final Font font;
   final int index;
   final Vector2 position;
   final TextStyle style;
-  ShapedGlyph._(this.index, this.position, this.style);
+  ShapedGlyph._(this.font, this.index, this.position, this.style);
 }

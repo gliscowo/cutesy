@@ -71,7 +71,8 @@ void main(List<String> args) {
   double triX = -100;
   double triY = -100;
 
-  initTextRenderer(textProgram);
+  final font = Font("resources/font/NotoSansKR-Regular.otf", 36);
+  final boldFont = Font("resources/font/NotoSansKR-Bold.otf", 36);
   _nextCursor();
 
   _window.onKey.where((event) => event.action == GLFW_PRESS).map((event) => event.key).listen((key) {
@@ -86,10 +87,11 @@ void main(List<String> args) {
 
   final notSoGood = Text([
     StyledString("now, that's ", style: TextStyle(color: Color.ofRgb(0x00f195))),
-    StyledString("some pretty ", style: TextStyle(color: Color.ofRgb(0x4870ff))),
+    StyledString("some pretty ", style: TextStyle(color: Color.ofRgb(0x4870ff), bold: true)),
     StyledString("epic ", style: TextStyle(color: Color.red)),
-    StyledString("text", style: TextStyle(color: Color.ofRgb(0x4870ff))),
-  ]);
+    StyledString("text", style: TextStyle(color: Color.ofRgb(0x4870ff), bold: true)),
+  ])
+    ..shape(font, boldFont);
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -118,7 +120,7 @@ void main(List<String> args) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     drawText(50, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
-    drawText(2, 0, .5, Text.string("$lastFps FPS"), textProgram, projection, Vector3.all(1));
+    drawText(2, 0, .5, Text.string("$lastFps FPS")..shape(font, boldFont), textProgram, projection, Vector3.all(1));
 
     _window.nextFrame();
 
