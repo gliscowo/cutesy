@@ -42,6 +42,11 @@ class VertexRenderObject<VF extends Function> {
   void draw() {
     _vao.draw(_buffer._cursor ~/ _descriptor.vertexSize);
   }
+
+  void delete() {
+    _vbo.delete();
+    _vao.delete();
+  }
 }
 
 class GlVertexBuffer {
@@ -77,6 +82,7 @@ class GlVertexBuffer {
 
   void delete() {
     final idPointer = malloc<Uint32>();
+    idPointer[0] = _id;
     glDeleteBuffers(1, idPointer);
     malloc.free(idPointer);
   }
@@ -103,6 +109,13 @@ class GlVertexArray {
 
   void unbind() {
     glBindVertexArray(0);
+  }
+
+  void delete() {
+    final idPointer = malloc<Uint32>();
+    idPointer[0] = _id;
+    glDeleteVertexArrays(1, idPointer);
+    malloc.free(idPointer);
   }
 }
 
