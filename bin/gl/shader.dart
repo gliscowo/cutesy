@@ -2,11 +2,14 @@ import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ffi/ffi.dart';
+import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../cutesy.dart';
+
+final Logger _logger = Logger("cutesy.shader_compiler");
 
 class GlShader {
   final int _id;
@@ -32,7 +35,7 @@ class GlShader {
 
     final success = malloc<Int32>();
     glGetShaderiv(_id, GL_COMPILE_STATUS, success);
-    print("Shader '${basename(source.path)}' compile success: ${success.value}");
+    _logger.info("Shader '${basename(source.path)}' compile success: ${success.value}");
 
     malloc.free(sourceString);
     malloc.free(sourceArray);
@@ -60,7 +63,7 @@ class GlProgram {
 
     final success = malloc<Int32>();
     glGetProgramiv(_id, GL_LINK_STATUS, success);
-    print("Program '$_id' link success: ${success.value}");
+    _logger.info("Program '$_id' link success: ${success.value}");
     malloc.free(success);
   }
 

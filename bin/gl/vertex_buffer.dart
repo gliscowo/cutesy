@@ -2,6 +2,7 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -120,6 +121,7 @@ class GlVertexArray {
 }
 
 class BufferBuilder {
+  static final Logger _logger = Logger("cutesy.buffer_builder");
   static const int _float32Size = 4;
 
   ByteData _data;
@@ -159,7 +161,7 @@ class BufferBuilder {
   void _ensureCapacity(int bytes) {
     if (_cursor + bytes <= _data.lengthInBytes) return;
 
-    print(
+    _logger.fine(
         "Growing BufferBuilder $hashCode from ${_data.lengthInBytes} to ${_data.lengthInBytes * 2} bytes to fit ${_cursor + bytes}");
 
     final newData = ByteData(_data.lengthInBytes * 2);

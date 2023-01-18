@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:glfw/glfw.dart';
+import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -21,15 +22,19 @@ bool _running = true;
 
 late final Window _window;
 
-void onGlfwError(int errorCode, Pointer<Utf8> description) {
-  print("GLFW Error: ${description.toDartString()} ($errorCode)");
-}
+final Logger _logger = Logger("cutesy");
+final Logger _glfwLogger = Logger("cutesy.glfw");
 
 void main(List<String> args) {
+  Logger.root.level = Level.FINE;
+  Logger.root.onRecord.listen((event) {
+    print("[${event.loggerName}] (${event.level.toString().toLowerCase()}) ${event.message}");
+  });
+
   DynamicLibrary.open("resources/lib/libglfw.so.3");
 
   if (glfwInit() != GLFW_TRUE) {
-    print("GLFW init failed");
+    _logger.severe("GLFW init failed");
     exit(-1);
   }
 
@@ -81,7 +86,7 @@ void main(List<String> args) {
   });
 
   _window.onChar.map(String.fromCharCode).listen((char) {
-    print("got char: $char");
+    _logger.info("got char: $char");
   });
 
   final notSoGood = Text([
@@ -128,7 +133,7 @@ void main(List<String> args) {
       frames = 0;
       passedTime = 0;
 
-      print("$lastFps FPS");
+      _logger.fine("$lastFps FPS");
     }
 
     passedTime += delta;
@@ -136,6 +141,10 @@ void main(List<String> args) {
   }
 
   glfwTerminate();
+}
+
+void onGlfwError(int errorCode, Pointer<Utf8> description) {
+  _glfwLogger.severe("GLFW Error: ${description.toDartString()} ($errorCode)");
 }
 
 extension CString on String {

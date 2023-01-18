@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:ffi/ffi.dart';
+import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -15,6 +16,8 @@ import 'text.dart';
 
 final freetype = FreetypeLibrary(DynamicLibrary.open("resources/lib/libfreetype.so"));
 final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("resources/lib/libharfbuzz.so"));
+
+final Logger _logger = Logger("cutesy.text_handler");
 
 class FontFamily {
   final List<Font> _allFonts = [];
@@ -34,7 +37,7 @@ class FontFamily {
 
     Font Function() defaultAndWarn(String type) {
       return () {
-        print("Could not find a '$type' font in family $familyName");
+        _logger.warning("Could not find a '$type' font in family $familyName");
         return defaultFont;
       };
     }

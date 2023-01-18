@@ -1,6 +1,7 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 
 typedef _GlErrorCallback = Void Function(Int32, Int32, Int32, Int32, Int32, Pointer<Utf8>, Pointer<Void>);
@@ -29,8 +30,10 @@ void attachGlErrorCallback() {
   glDebugMessageCallback(Pointer.fromFunction<_GlErrorCallback>(_onGlError), nullptr);
 }
 
+final Logger _logger = Logger("cutesy.opengl");
+
 void _onGlError(
     int source, int type, int id, int severity, int length, Pointer<Utf8> message, Pointer<Void> userParam) {
-  print(
+  _logger.warning(
       "OpenGL Debug Message, type ${_glMessageTypes[type]} severity ${_glSeverities[severity]}: ${message.toDartString()}");
 }
