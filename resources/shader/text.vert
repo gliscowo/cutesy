@@ -9,8 +9,7 @@ out vec3 textColor;
 
 uniform mat4 uProjection;
 
-void main()
-{
+void main() {
     gl_Position = uProjection * vec4(aPos, 0.0, 1.0);
 
     texCoords = aUv;

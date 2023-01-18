@@ -120,9 +120,6 @@ void main(List<String> args) {
       ..upload(dynamic: true)
       ..draw();
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     drawText(50, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
     drawText(2, 0, .5, Text.string("$lastFps FPS")..shape(font), textProgram, projection, Vector3.all(1));
 

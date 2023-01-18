@@ -71,8 +71,6 @@ class Font {
   late final bool bold, italic;
 
   Font(String path, this.size) {
-    // _glyphTextures.add(_createGlyphAtlasTexture());
-
     final nativePath = path.toNativeUtf8().cast<Char>();
 
     final face = malloc<FT_Face>();
@@ -87,7 +85,6 @@ class Font {
     _ftFace = face.value;
     freetype.FT_Set_Pixel_Sizes(_ftFace, 0, size);
 
-    // HarfBuzz
     final blob = harfbuzz.hb_blob_create_from_file(nativePath);
     final hbFace = harfbuzz.hb_face_create(blob, 0);
     _hbFont = harfbuzz.hb_font_create(hbFace);
@@ -99,29 +96,43 @@ class Font {
   Glyph operator [](int index) => _glyphs[index] ?? _loadGlyph(index);
 
   Glyph _loadGlyph(int index) {
-    if (freetype.FT_Load_Glyph(_ftFace, index, FT_LOAD_RENDER) != 0) {
+    if (freetype.FT_Load_Glyph(_ftFace, index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_COLOR) != 0) {
       throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
     }
 
-    final location = _allocateGlpyhPosition(_ftFace.ref.glyph.ref.bitmap.width, _ftFace.ref.glyph.ref.bitmap.rows);
+    final width = _ftFace.ref.glyph.ref.bitmap.width ~/ 3;
+    final pitch = _ftFace.ref.glyph.ref.bitmap.pitch;
+    final height = _ftFace.ref.glyph.ref.bitmap.rows;
+    final location = _allocateGlyphPosition(width, height);
+
+    final glyphPixels = _ftFace.ref.glyph.ref.bitmap.buffer.cast<Uint8>().asTypedList(pitch * height);
+    final pixelBuffer = malloc<Uint8>(width * height * 3);
+    final pixels = pixelBuffer.asTypedList(width * height * 3);
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        pixels[y * width * 3 + x * 3] = glyphPixels[y * pitch + x * 3];
+        pixels[y * width * 3 + x * 3 + 1] = glyphPixels[y * pitch + x * 3 + 1];
+        pixels[y * width * 3 + x * 3 + 2] = glyphPixels[y * pitch + x * 3 + 2];
+      }
+    }
 
     glBindTexture(GL_TEXTURE_2D, _glyphTextures.first);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, location.u, location.v, _ftFace.ref.glyph.ref.bitmap.width,
-        _ftFace.ref.glyph.ref.bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, location.u, location.v, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
 
     return _glyphs[index] = Glyph(
       _glyphTextures.first,
       location.u,
       location.v,
-      _ftFace.ref.glyph.ref.bitmap.width,
-      _ftFace.ref.glyph.ref.bitmap.rows,
+      width,
+      height,
       _ftFace.ref.glyph.ref.bitmap_left,
       _ftFace.ref.glyph.ref.bitmap_top,
     );
   }
 
-  static _GlyphLocation _allocateGlpyhPosition(int width, int height) {
+  static _GlyphLocation _allocateGlyphPosition(int width, int height) {
     if (_nextGlyphX + width >= 1024) {
       _nextGlyphX = 0;
       _nextGlyphY += _currentRowHeight + 1;
@@ -151,7 +162,7 @@ class Font {
     glBindTexture(GL_TEXTURE_2D, textureId);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 1024, 1024, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 1024, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -223,6 +234,8 @@ void drawText(double x, double y, double scale, Text text, GlProgram program, Ma
   }
 
   glActiveTexture(GL_TEXTURE0);
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
 
   renderObjects.forEach((texture, vro) {
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -230,4 +243,6 @@ void drawText(double x, double y, double scale, Text text, GlProgram program, Ma
       ..upload(dynamic: true)
       ..draw();
   });
+
+  glDisable(GL_BLEND);
 }
