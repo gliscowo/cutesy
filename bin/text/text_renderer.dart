@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:io';
 
 import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
@@ -14,6 +15,43 @@ import 'text.dart';
 final freetype = FreetypeLibrary(DynamicLibrary.open("resources/lib/libfreetype.so"));
 final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("resources/lib/libharfbuzz.so"));
 
+class FontFamily {
+  final List<Font> _allFonts = [];
+
+  late final Font defaultFont;
+  late final Font boldFont, italicFont, boldItalicFont;
+
+  FontFamily(String familyName, int size) {
+    final fontFiles = Directory("resources/font/$familyName")
+        .listSync()
+        .whereType<File>()
+        .where((file) => file.path.endsWith(".otf"));
+
+    for (final font in fontFiles) {
+      _allFonts.add(Font(font.absolute.path, size));
+    }
+
+    Font Function() defaultAndWarn(String type) {
+      return () {
+        print("Could not find a '$type' font in family $familyName");
+        return defaultFont;
+      };
+    }
+
+    defaultFont = _allFonts.firstWhere((font) => !font.bold && !font.italic, orElse: () => _allFonts.first);
+    boldFont = _allFonts.firstWhere((font) => font.bold && !font.italic, orElse: defaultAndWarn("bold"));
+    italicFont = _allFonts.firstWhere((font) => !font.bold && font.italic, orElse: defaultAndWarn("italic"));
+    boldItalicFont = _allFonts.firstWhere((font) => font.bold && font.italic, orElse: defaultAndWarn("bold & italic"));
+  }
+
+  Font fontForStyle(TextStyle style) {
+    if (style.bold && !style.italic) return boldFont;
+    if (!style.bold && style.italic) return italicFont;
+    if (style.bold && style.italic) return boldItalicFont;
+    return defaultFont;
+  }
+}
+
 class Font {
   static FT_Library? _ftInstance;
 
@@ -24,6 +62,8 @@ class Font {
   final Map<int, Glyph> _glyphs = {};
   final int size;
 
+  late final bool bold, italic;
+
   Font(String path, this.size) {
     _glyphTextures.add(_createGlyphAtlasTexture());
 
@@ -33,6 +73,10 @@ class Font {
     if (freetype.FT_New_Face(_ftLibrary, nativePath, 0, face) != 0) {
       throw ArgumentError.value(path, "path", "Could not load font");
     }
+
+    final faceStruct = face.value.ref;
+    bold = faceStruct.style_flags & FT_STYLE_FLAG_BOLD != 0;
+    italic = faceStruct.style_flags & FT_STYLE_FLAG_ITALIC != 0;
 
     _ftFace = face.value;
     freetype.FT_Set_Pixel_Sizes(_ftFace, 0, size);

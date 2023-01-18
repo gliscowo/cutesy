@@ -36,7 +36,7 @@ class Text {
     return _shapedGlyphs;
   }
 
-  void shape(Font font, Font boldFont) {
+  void shape(FontFamily fontFamily) {
     int cursorX = 0, cursorY = 0;
 
     for (final segment in _segments) {
@@ -55,7 +55,7 @@ class Text {
       harfbuzz.hb_buffer_set_language(buffer, harfbuzz.hb_language_from_string(language, -1));
       harfbuzz.hb_buffer_set_cluster_level(
           buffer, hb_buffer_cluster_level_t.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
-      harfbuzz.hb_shape(segment.style.bold ? boldFont.hbFont : font.hbFont, buffer, hbFeatures, 1);
+      harfbuzz.hb_shape(fontFamily.fontForStyle(segment.style).hbFont, buffer, hbFeatures, 1);
       malloc.free(hbFeatures);
 
       final glpyhCount = malloc<UnsignedInt>();
@@ -64,7 +64,7 @@ class Text {
 
       for (var i = 0; i < glpyhCount.value; i++) {
         _shapedGlyphs.add(ShapedGlyph._(
-          segment.style.bold ? boldFont : font,
+          fontFamily.fontForStyle(segment.style),
           glyphInfo[i].codepoint,
           Vector2(
             cursorX + glyphPos[i].x_offset.toDouble(),
