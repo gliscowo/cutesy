@@ -87,7 +87,7 @@ void main(List<String> args) {
   final notSoGood = Text([
     StyledString("now, that's "),
     StyledString("some pretty ", style: TextStyle(bold: true)),
-    StyledString("epic ", style: TextStyle(italic: true, color: Color.ofHsv(200 / 360, 1, 1))),
+    StyledString("epic ", style: TextStyle(italic: true, color: Color.ofHsv(220 / 360, .65, 1))),
     StyledString("text", style: TextStyle(bold: true, italic: true)),
   ])
     ..shape(font);

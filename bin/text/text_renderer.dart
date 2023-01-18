@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:ffi/ffi.dart';
 import 'package:opengl/opengl.dart';
@@ -54,18 +55,20 @@ class FontFamily {
 
 class Font {
   static FT_Library? _ftInstance;
+  static final List<int> _glyphTextures = [];
+  static int _nextGlyphX = 1024, _nextGlyphY = 1024;
+  static int _currentRowHeight = 0;
 
   late final Pointer<hb_font_t> _hbFont;
   late final FT_Face _ftFace;
 
-  final List<int> _glyphTextures = [];
   final Map<int, Glyph> _glyphs = {};
   final int size;
 
   late final bool bold, italic;
 
   Font(String path, this.size) {
-    _glyphTextures.add(_createGlyphAtlasTexture());
+    // _glyphTextures.add(_createGlyphAtlasTexture());
 
     final nativePath = path.toNativeUtf8().cast<Char>();
 
@@ -92,32 +95,22 @@ class Font {
 
   Glyph operator [](int index) => _glyphs[index] ?? _loadGlyph(index);
 
-  int _nextGlyphX = 0, _nextGlyphY = 0;
-
   Glyph _loadGlyph(int index) {
     if (freetype.FT_Load_Glyph(_ftFace, index, FT_LOAD_RENDER) != 0) {
       throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
     }
 
-    if (_nextGlyphX + _ftFace.ref.glyph.ref.bitmap.width + 1 >= 1024) {
-      _nextGlyphY += _ftFace.ref.glyph.ref.bitmap.rows + 1;
-      _nextGlyphX = 0;
-    }
-
-    int glyphX = _nextGlyphX;
-    int glyphY = _nextGlyphY;
+    final location = _allocateGlpyhPosition(_ftFace.ref.glyph.ref.bitmap.width, _ftFace.ref.glyph.ref.bitmap.rows);
 
     glBindTexture(GL_TEXTURE_2D, _glyphTextures.first);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, glyphX, glyphY, _ftFace.ref.glyph.ref.bitmap.width,
+    glTexSubImage2D(GL_TEXTURE_2D, 0, location.u, location.v, _ftFace.ref.glyph.ref.bitmap.width,
         _ftFace.ref.glyph.ref.bitmap.rows, GL_RED, GL_UNSIGNED_BYTE, _ftFace.ref.glyph.ref.bitmap.buffer);
-
-    _nextGlyphX += _ftFace.ref.glyph.ref.bitmap.width + 1;
 
     return _glyphs[index] = Glyph(
       _glyphTextures.first,
-      glyphX,
-      glyphY,
+      location.u,
+      location.v,
       _ftFace.ref.glyph.ref.bitmap.width,
       _ftFace.ref.glyph.ref.bitmap.rows,
       _ftFace.ref.glyph.ref.bitmap_left,
@@ -125,7 +118,28 @@ class Font {
     );
   }
 
-  int _createGlyphAtlasTexture() {
+  static _GlyphLocation _allocateGlpyhPosition(int width, int height) {
+    if (_nextGlyphX + width >= 1024) {
+      _nextGlyphX = 0;
+      _nextGlyphY += _currentRowHeight + 1;
+    }
+
+    if (_nextGlyphY + height >= 1024) {
+      _glyphTextures.add(_createGlyphAtlasTexture());
+      _nextGlyphX = 0;
+      _nextGlyphY = 0;
+    }
+
+    final textureId = _glyphTextures.last;
+    final location = _GlyphLocation(textureId, _nextGlyphX, _nextGlyphY);
+
+    _nextGlyphX += width + 1;
+    _currentRowHeight = max(_currentRowHeight, height);
+
+    return location;
+  }
+
+  static int _createGlyphAtlasTexture() {
     final texture = malloc<Uint32>();
     glGenTextures(1, texture);
     final textureId = texture.value;
@@ -156,6 +170,11 @@ class Font {
 
     return _ftInstance = ft.value;
   }
+}
+
+class _GlyphLocation {
+  final int textureId, u, v;
+  _GlyphLocation(this.textureId, this.u, this.v);
 }
 
 class Glyph {
