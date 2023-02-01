@@ -75,6 +75,15 @@ class GlProgram {
     glUniformMatrix4fv(_uniformLocation(uniform), 1, GL_FALSE, _floatBuffer);
   }
 
+  void uniform1f(String uniform, double value) {
+    glUniform1f(_uniformLocation(uniform), value);
+  }
+
+  void uniform2vf(String uniform, Vector2 vec) => uniform2f(uniform, vec.x, vec.y);
+  void uniform2f(String uniform, double x, double y) {
+    glUniform2f(_uniformLocation(uniform), x, y);
+  }
+
   void uniform3vf(String uniform, Vector3 vec) => uniform3f(uniform, vec.x, vec.y, vec.z);
   void uniform3f(String uniform, double x, double y, double z) {
     glUniform3f(_uniformLocation(uniform), x, y, z);

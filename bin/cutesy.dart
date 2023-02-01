@@ -55,6 +55,11 @@ void main(List<String> args) {
     GlShader.fragment(File("resources/shader/text.frag")),
   ]);
 
+  final roundedProgram = GlProgram([
+    GlShader.vertex(File("resources/shader/position.vert")),
+    GlShader.fragment(File("resources/shader/rounded.frag")),
+  ]);
+
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 
   _window.onResize.listen((event) {
@@ -63,18 +68,7 @@ void main(List<String> args) {
   });
 
   final triangle = VertexRenderObject(posColorVertexDescriptor, posColorProgram);
-
-  textProgram.use();
-  posColorProgram.uniform3f("uTextColor", 1, 0, 1);
-
-  double lastTime = glfwGetTime();
-  int frames = 0;
-  int lastFps = 0;
-  double passedTime = 0;
-  glfwSwapInterval(0);
-
-  double triX = -100;
-  double triY = -100;
+  final square = VertexRenderObject(posColorVertexDescriptor, roundedProgram);
 
   final font = FontFamily("CascadiaCode", 36);
   _nextCursor();
@@ -96,6 +90,15 @@ void main(List<String> args) {
     StyledString("text", style: TextStyle(bold: true, italic: true)),
   ])
     ..shape(font);
+
+  double lastTime = glfwGetTime();
+  int frames = 0;
+  int lastFps = 0;
+  double passedTime = 0;
+  glfwSwapInterval(0);
+
+  double triX = -100;
+  double triY = -100;
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -123,14 +126,37 @@ void main(List<String> args) {
     drawText(50, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
     drawText(2, 0, .5, Text.string("$lastFps FPS")..shape(font), textProgram, projection, Vector3.all(1));
 
+    roundedProgram
+      ..use()
+      ..uniformMat4("uTransform", Matrix4.identity())
+      ..uniformMat4("uProjection", projection)
+      ..uniform1f("uRadius", 15)
+      ..uniform2f("uLocation", 100, _window.height - 100 - 100)
+      ..uniform2f("uSize", 100, 100);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    square
+      ..clear()
+      ..vertex(Vector3(100, 100, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(100, 200, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(200, 200, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(200, 200, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(200, 100, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(100, 100, 0), Vector4(0, .2, 1, 1))
+      ..upload(dynamic: true)
+      ..draw();
+
+    glDisable(GL_BLEND);
+
     _window.nextFrame();
 
     if (passedTime >= 1) {
-      lastFps = frames;
+      _logger.fine("${lastFps = frames} FPS");
+
       frames = 0;
       passedTime = 0;
-
-      _logger.fine("$lastFps FPS");
     }
 
     passedTime += delta;
