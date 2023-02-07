@@ -131,7 +131,7 @@ void main(List<String> args) {
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection)
       ..uniform1f("uRadius", 15)
-      ..uniform2f("uLocation", 100, _window.height - 100 - 100)
+      ..uniform2f("uLocation", 100, _window.height - 200 - 100)
       ..uniform2f("uSize", 100, 100);
 
     glEnable(GL_BLEND);
@@ -139,12 +139,12 @@ void main(List<String> args) {
 
     square
       ..clear()
-      ..vertex(Vector3(100, 100, 0), Vector4(0, .2, 1, 1))
       ..vertex(Vector3(100, 200, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(100, 300, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(200, 300, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(200, 300, 0), Vector4(0, .2, 1, 1))
       ..vertex(Vector3(200, 200, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(200, 200, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(200, 100, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(100, 100, 0), Vector4(0, .2, 1, 1))
+      ..vertex(Vector3(100, 200, 0), Vector4(0, .2, 1, 1))
       ..upload(dynamic: true)
       ..draw();
 
