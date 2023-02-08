@@ -9,6 +9,10 @@ class RenderContext {
 
   RenderContext(this.window, List<GlProgram> programs) {
     for (final program in programs) {
+      if (_programStore[program.name] != null) {
+        throw ArgumentError("Duplicate program name ${program.name}", "programs");
+      }
+
       _programStore[program.name] = program;
     }
   }
