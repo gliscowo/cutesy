@@ -12,6 +12,8 @@ import 'gl/debug.dart';
 import 'gl/shader.dart';
 import 'gl/vertex_buffer.dart';
 import 'gl/vertex_descriptor.dart';
+import 'primitive_renderer.dart';
+import 'render_context.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
 import 'window.dart';
@@ -45,20 +47,35 @@ void main(List<String> args) {
   glfwMakeContextCurrent(_window.handle);
   attachGlErrorCallback();
 
-  final posColorProgram = GlProgram([
+  final hsvProgram = GlProgram("hsv", [
+    GlShader.vertex(File("resources/shader/position.vert")),
+    GlShader.fragment(File("resources/shader/hsv.frag")),
+  ]);
+
+  final posColorProgram = GlProgram("pos_color", [
     GlShader.vertex(File("resources/shader/position.vert")),
     GlShader.fragment(File("resources/shader/position.frag")),
   ]);
 
-  final textProgram = GlProgram([
+  final textProgram = GlProgram("text", [
     GlShader.vertex(File("resources/shader/text.vert")),
     GlShader.fragment(File("resources/shader/text.frag")),
   ]);
 
-  final roundedProgram = GlProgram([
+  final roundedProgram = GlProgram("rounded_rect", [
     GlShader.vertex(File("resources/shader/position.vert")),
     GlShader.fragment(File("resources/shader/rounded.frag")),
   ]);
+
+  final circleProgram = GlProgram("circle", [
+    GlShader.vertex(File("resources/shader/position.vert")),
+    GlShader.fragment(File("resources/shader/circle.frag")),
+  ]);
+
+  // final blurProgram = GlProgram("blur", [
+  //   GlShader.vertex(File("resources/shader/position.vert")),
+  //   GlShader.fragment(File("resources/shader/blur.frag")),
+  // ]);
 
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 
@@ -67,8 +84,11 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final triangle = VertexRenderObject(posColorVertexDescriptor, posColorProgram);
-  final square = VertexRenderObject(posColorVertexDescriptor, roundedProgram);
+  final renderContext =
+      RenderContext(_window, [hsvProgram, posColorProgram, textProgram, roundedProgram, circleProgram]);
+
+  final triangle = VertexRenderObject(posColorVertexDescriptor, hsvProgram);
+  final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
 
   final font = FontFamily("CascadiaCode", 36);
   _nextCursor();
@@ -102,6 +122,7 @@ void main(List<String> args) {
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_BLEND);
 
     final hue = (lastTime / 5) % 1;
     final delta = glfwGetTime() - lastTime;
@@ -110,7 +131,7 @@ void main(List<String> args) {
     triX += (_window.cursorX - triX - 100) * delta * 7.5;
     triY += (_window.cursorY - triY - 100) * delta * 7.5;
 
-    posColorProgram
+    hsvProgram
       ..use()
       ..uniformMat4("uTransform", Matrix4.translation(Vector3(triX, triY, 0)))
       ..uniformMat4("uProjection", projection);
@@ -126,29 +147,8 @@ void main(List<String> args) {
     drawText(50, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
     drawText(2, 0, .5, Text.string("$lastFps FPS")..shape(font), textProgram, projection, Vector3.all(1));
 
-    roundedProgram
-      ..use()
-      ..uniformMat4("uTransform", Matrix4.identity())
-      ..uniformMat4("uProjection", projection)
-      ..uniform1f("uRadius", 15)
-      ..uniform2f("uLocation", 100, _window.height - 200 - 100)
-      ..uniform2f("uSize", 100, 100);
-
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    square
-      ..clear()
-      ..vertex(Vector3(100, 200, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(100, 300, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(200, 300, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(200, 300, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(200, 200, 0), Vector4(0, .2, 1, 1))
-      ..vertex(Vector3(100, 200, 0), Vector4(0, .2, 1, 1))
-      ..upload(dynamic: true)
-      ..draw();
-
-    glDisable(GL_BLEND);
+    primitiveRenderer.roundedRect(150, 150, 100, 100, 15, Color.green, projection);
+    primitiveRenderer.circle(600, 150, 75, Color.blue, projection);
 
     _window.nextFrame();
 

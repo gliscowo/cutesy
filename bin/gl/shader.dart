@@ -48,9 +48,10 @@ class GlProgram {
   // static final Pointer<Int> _intBuffer = malloc<Float>(16);
 
   final int _id;
+  final String name;
   final Map<String, int> _uniformCache = {};
 
-  GlProgram(List<GlShader> shaders) : _id = glCreateProgram() {
+  GlProgram(this.name, List<GlShader> shaders) : _id = glCreateProgram() {
     for (final shader in shaders) {
       glAttachShader(_id, shader.id);
     }

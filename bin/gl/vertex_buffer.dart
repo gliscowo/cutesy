@@ -14,11 +14,12 @@ class VertexRenderObject<VF extends Function> {
   final GlVertexArray _vao = GlVertexArray();
 
   final BufferBuilder _buffer;
-
   final VertexDescriptor _descriptor;
+
+  final GlProgram program;
   late final VF vertex;
 
-  VertexRenderObject(VertexDescriptor<VF> descriptor, GlProgram program, {int initialBufferSize = 1024})
+  VertexRenderObject(VertexDescriptor<VF> descriptor, this.program, {int initialBufferSize = 1024})
       : _descriptor = descriptor,
         _buffer = BufferBuilder(initialBufferSize) {
     _vbo.bind();

@@ -234,7 +234,6 @@ void drawText(double x, double y, double scale, Text text, GlProgram program, Ma
   }
 
   glActiveTexture(GL_TEXTURE0);
-  glEnable(GL_BLEND);
   glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
 
   renderObjects.forEach((texture, vro) {
@@ -243,6 +242,4 @@ void drawText(double x, double y, double scale, Text text, GlProgram program, Ma
       ..upload(dynamic: true)
       ..draw();
   });
-
-  glDisable(GL_BLEND);
 }
