@@ -90,6 +90,13 @@ class GlProgram {
     glUniform3f(_uniformLocation(uniform), x, y, z);
   }
 
+  void uniformSampler(String uniform, int texture, int index) {
+    glUniform1i(_uniformLocation(uniform), index);
+
+    glActiveTexture(GL_TEXTURE0 + index);
+    glBindTexture(GL_TEXTURE_2D, texture);
+  }
+
   int _uniformLocation(String uniform) =>
       _uniformCache.putIfAbsent(uniform, () => uniform.withAsNative((utf8) => glGetUniformLocation(_id, utf8)));
 

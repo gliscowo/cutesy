@@ -72,10 +72,10 @@ void main(List<String> args) {
     GlShader.fragment(File("resources/shader/circle.frag")),
   ]);
 
-  // final blurProgram = GlProgram("blur", [
-  //   GlShader.vertex(File("resources/shader/position.vert")),
-  //   GlShader.fragment(File("resources/shader/blur.frag")),
-  // ]);
+  final blurProgram = GlProgram("blur", [
+    GlShader.vertex(File("resources/shader/position.vert")),
+    GlShader.fragment(File("resources/shader/blur.frag")),
+  ]);
 
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 
@@ -84,8 +84,14 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final renderContext =
-      RenderContext(_window, [hsvProgram, posColorProgram, textProgram, roundedProgram, circleProgram]);
+  final renderContext = RenderContext(_window, [
+    hsvProgram,
+    posColorProgram,
+    textProgram,
+    roundedProgram,
+    circleProgram,
+    blurProgram,
+  ]);
 
   final triangle = VertexRenderObject(posColorVertexDescriptor, hsvProgram);
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
@@ -149,6 +155,8 @@ void main(List<String> args) {
 
     primitiveRenderer.roundedRect(150, 150, 100, 100, 15, Color.green, projection);
     primitiveRenderer.circle(600, 150, 75, Color.blue, projection);
+
+    primitiveRenderer.blur(200, 100, _window.width - 400, _window.height - 200, Color.rgb(.5, .5, .8), projection);
 
     _window.nextFrame();
 
