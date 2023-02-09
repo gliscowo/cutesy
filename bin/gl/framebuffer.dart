@@ -10,8 +10,10 @@ class GlFramebuffer {
   late int _id, _colorAttachmentId;
 
   int _width, _height;
+  late final bool _stencil;
 
   GlFramebuffer(this._width, this._height, {bool stencil = false}) {
+    _stencil = stencil;
     _initGlState();
   }
 
@@ -34,10 +36,17 @@ class GlFramebuffer {
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colorAttachmentId, 0);
 
-    final depthRenderbuffer = _genGlObject(glGenRenderbuffers);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer);
+    if (_stencil) {
+      final depthStencilRenderbuffer = _genGlObject(glGenRenderbuffers);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthStencilRenderbuffer);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, _width, _height);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthStencilRenderbuffer);
+    } else {
+      final depthRenderbuffer = _genGlObject(glGenRenderbuffers);
+      glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer);
+      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height);
+      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthRenderbuffer);
+    }
 
     unbind();
   }
