@@ -93,7 +93,7 @@ void main(List<String> args) {
     blurProgram,
   ]);
 
-  final triangle = VertexRenderObject(posColorVertexDescriptor, hsvProgram);
+  final triangle = VertexRenderObject(posColorVertexDescriptor, posColorProgram);
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
 
   final font = FontFamily("CascadiaCode", 36);
@@ -137,16 +137,14 @@ void main(List<String> args) {
     triX += (_window.cursorX - triX - 100) * delta * 7.5;
     triY += (_window.cursorY - triY - 100) * delta * 7.5;
 
-    hsvProgram
+    posColorProgram
       ..use()
       ..uniformMat4("uTransform", Matrix4.translation(Vector3(triX, triY, 0)))
       ..uniformMat4("uProjection", projection);
 
+    triangle.clear();
+    primitiveRenderer.buildTri(triangle.vertex, 0, 0, 200, 200, Color.green);
     triangle
-      ..clear()
-      ..vertex(Vector3(0, 200, 0), Vector4(hue, 1, 1, 1))
-      ..vertex(Vector3(200, 200, 0), Vector4(hue + 1 / 3, 1, 1, 1))
-      ..vertex(Vector3(100, 0, 0), Vector4(hue, 1, 1, 1))
       ..upload(dynamic: true)
       ..draw();
 

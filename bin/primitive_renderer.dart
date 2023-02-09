@@ -36,7 +36,7 @@ class ImmediatePrimitiveRenderer {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     _roundedVro.clear();
-    _buildRect(_roundedVro, x, y, width, height, color);
+    buildRect(_roundedVro.vertex, x, y, width, height, color);
     _roundedVro
       ..upload(dynamic: true)
       ..draw();
@@ -51,7 +51,7 @@ class ImmediatePrimitiveRenderer {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     _posColorVro.clear();
-    _buildRect(_posColorVro, x, y, width, height, color);
+    buildRect(_posColorVro.vertex, x, y, width, height, color);
     _posColorVro
       ..upload(dynamic: true)
       ..draw();
@@ -78,7 +78,7 @@ class ImmediatePrimitiveRenderer {
     glDisable(GL_BLEND);
 
     _posColorVro.clear();
-    _buildRect(_posColorVro, x, y, width, height, color);
+    buildRect(_posColorVro.vertex, x, y, width, height, color);
     _posColorVro
       ..upload(dynamic: true)
       ..draw();
@@ -97,26 +97,38 @@ class ImmediatePrimitiveRenderer {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     _circleVro.clear();
-    _buildRect(_circleVro, x, y, radius * 2, radius * 2, color);
+    buildRect(_circleVro.vertex, x, y, radius * 2, radius * 2, color);
     _circleVro
       ..upload(dynamic: true)
       ..draw();
   }
 
-  void _buildRect(
-    VertexRenderObject<PosColorVertexFunction> vro,
+  void buildRect(
+    PosColorVertexFunction vertex,
     double x,
     double y,
     double width,
     double height,
     Color color,
   ) {
-    vro
-      ..vertex(Vector3(x, y, 0), color.asVector())
-      ..vertex(Vector3(x, y + height, 0), color.asVector())
-      ..vertex(Vector3(x + width, y + height, 0), color.asVector())
-      ..vertex(Vector3(x + width, y + height, 0), color.asVector())
-      ..vertex(Vector3(x + width, y, 0), color.asVector())
-      ..vertex(Vector3(x, y, 0), color.asVector());
+    vertex(Vector3(x, y, 0), color.asVector());
+    vertex(Vector3(x, y + height, 0), color.asVector());
+    vertex(Vector3(x + width, y + height, 0), color.asVector());
+    vertex(Vector3(x + width, y + height, 0), color.asVector());
+    vertex(Vector3(x + width, y, 0), color.asVector());
+    vertex(Vector3(x, y, 0), color.asVector());
+  }
+
+  void buildTri(
+    PosColorVertexFunction vertex,
+    double x,
+    double y,
+    double width,
+    double height,
+    Color color,
+  ) {
+    vertex(Vector3(x, y + height, 0), color.asVector());
+    vertex(Vector3(x + width, y + height, 0), color.asVector());
+    vertex(Vector3(x + width / 2, y, 0), color.asVector());
   }
 }
