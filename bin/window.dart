@@ -34,17 +34,17 @@ class Window {
   int _restoreWidth = 0;
   int _restoreHeight = 0;
 
-  Window(int width, int height, String title, {bool debug = false})
+  Window(int width, int height, String title, {bool debug = false, int samples = 0})
       : _width = width,
         _height = height {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // glfwWindowHint(GLFW_SAMPLES, 8);
     glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
 
     if (debug) glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+    if (samples != 0) glfwWindowHint(GLFW_SAMPLES, samples);
 
     _handle = title.withAsNative((utf8) => glfwCreateWindow(width, height, utf8, nullptr, nullptr));
 
