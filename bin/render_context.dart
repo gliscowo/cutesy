@@ -17,7 +17,7 @@ class RenderContext {
     }
   }
 
-  GlProgram lookupProgram(String name) {
+  GlProgram findProgram(String name) {
     final program = _programStore[name];
     if (program == null) throw StateError("Missing required program $name");
 

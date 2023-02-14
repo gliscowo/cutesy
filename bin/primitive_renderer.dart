@@ -12,20 +12,24 @@ class ImmediatePrimitiveRenderer {
 
   final VertexRenderObject<PosColorVertexFunction> _posColorVro;
   final VertexRenderObject<PosColorVertexFunction> _roundedVro;
+  final VertexRenderObject<PosColorVertexFunction> _roundedOutlineVro;
   final VertexRenderObject<PosColorVertexFunction> _circleVro;
   final VertexRenderObject<PosColorVertexFunction> _blurVro;
 
   final GlFramebuffer _blurFramebuffer;
 
   ImmediatePrimitiveRenderer(this._context)
-      : _posColorVro = VertexRenderObject(posColorVertexDescriptor, _context.lookupProgram("pos_color")),
-        _circleVro = VertexRenderObject(posColorVertexDescriptor, _context.lookupProgram("circle")),
-        _blurVro = VertexRenderObject(posColorVertexDescriptor, _context.lookupProgram("blur")),
-        _roundedVro = VertexRenderObject(posColorVertexDescriptor, _context.lookupProgram("rounded_rect")),
+      : _posColorVro = VertexRenderObject(posColorVertexDescriptor, _context.findProgram("pos_color")),
+        _circleVro = VertexRenderObject(posColorVertexDescriptor, _context.findProgram("circle")),
+        _blurVro = VertexRenderObject(posColorVertexDescriptor, _context.findProgram("blur")),
+        _roundedVro = VertexRenderObject(posColorVertexDescriptor, _context.findProgram("rounded_rect")),
+        _roundedOutlineVro = VertexRenderObject(posColorVertexDescriptor, _context.findProgram("rounded_rect_outline")),
         _blurFramebuffer = GlFramebuffer(_context.window.width, _context.window.height)..trackWindow(_context.window);
 
-  void roundedRect(double x, double y, double width, double height, double radius, Color color, Matrix4 projection) {
-    _roundedVro.program
+  void roundedRect(double x, double y, double width, double height, double radius, Color color, Matrix4 projection,
+      {double? outlineThickness}) {
+    final vro = outlineThickness == null ? _roundedVro : _roundedOutlineVro;
+    vro.program
       ..use()
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection)
@@ -33,11 +37,13 @@ class ImmediatePrimitiveRenderer {
       ..uniform2f("uLocation", x, _context.window.height - y - height)
       ..uniform2f("uSize", width, height);
 
+    if (outlineThickness != null) vro.program.uniform1f("uThickness", outlineThickness);
+
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    _roundedVro.clear();
-    buildRect(_roundedVro.vertex, x, y, width, height, color);
-    _roundedVro
+    vro.clear();
+    buildRect(vro.vertex, x, y, width, height, color);
+    vro
       ..upload(dynamic: true)
       ..draw();
   }
