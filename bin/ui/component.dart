@@ -4,7 +4,10 @@ import 'package:meta/meta.dart';
 import '../color.dart';
 import '../context.dart';
 import '../text/text.dart';
+import '../text/text_renderer.dart';
+import '../window.dart';
 import 'animation.dart';
+import 'events.dart';
 import 'insets.dart';
 import 'math.dart';
 import 'positioning.dart';
@@ -16,7 +19,7 @@ abstract class Component with Rectangle {
 
   ParentComponent? _parent;
   bool _mounted = false;
-  Size _space = Size.zero;
+  BuildContext? _buildContext;
 
   int _batchedEvents = 0;
   bool _dirty = false;
@@ -129,10 +132,16 @@ abstract class Component with Rectangle {
   int determineVerticalContentSize(Sizing sizing) =>
       throw UnimplementedError("$runtimeType does not support content-sizing on the horizontal axis");
 
+  /// The last known environment in which this
+  /// component was built. This is useful when emitting
+  /// layout updates from within a parent component
+  @protected
+  BuildContext? get buildContext => _buildContext;
+
   /// Inflate this component into some amount
   /// of available space, given by [space]
-  void inflate(Size space) {
-    _space = space;
+  void inflate(BuildContext context) {
+    _buildContext = context;
     applySizing();
     _dirty = false;
   }
@@ -144,8 +153,8 @@ abstract class Component with Rectangle {
 
     final margins = this.margins.value;
 
-    _width = horizontalSizing.inflate(_space.width - margins.horizontal, determineHorizontalContentSize);
-    _height = verticalSizing.inflate(_space.height - margins.vertical, determineVerticalContentSize);
+    _width = horizontalSizing.inflate(_buildContext!.space.width - margins.horizontal, determineHorizontalContentSize);
+    _height = verticalSizing.inflate(_buildContext!.space.height - margins.vertical, determineVerticalContentSize);
   }
 
   @protected
@@ -228,9 +237,11 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the click and no more
   /// components should be notified
   ///
-  bool onMouseDown(double mouseX, double mouseY, int button) => false;
+  bool onMouseDown(double mouseX, double mouseY, int button) =>
+      _mouseDownEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
 
-  // EventSource<MouseDown> mouseDown();
+  final EventStream<MouseButtonEvent, bool> _mouseDownEvents = EventStream.withBoolResult();
+  EventSource<MouseButtonEvent, bool> get mouseDown => _mouseDownEvents.source;
 
   ///
   /// Called when a mouse button has been released
@@ -241,9 +252,11 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the event and no more
   /// components should be notified
   ///
-  bool onMouseUp(double mouseX, double mouseY, int button) => false;
+  bool onMouseUp(double mouseX, double mouseY, int button) =>
+      _mouseUpEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
 
-  // EventSource<MouseUp> mouseUp();
+  final EventStream<MouseButtonEvent, bool> _mouseUpEvents = EventStream.withBoolResult();
+  EventSource<MouseButtonEvent, bool> get mouseUp => _mouseUpEvents.source;
 
   ///
   /// Called when the mouse has been scrolled inside
@@ -257,9 +270,11 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the scroll event
   /// and no more components should be notified
   ///
-  bool onMouseScroll(double mouseX, double mouseY, double amount) => false;
+  bool onMouseScroll(double mouseX, double mouseY, double amount) =>
+      _mouseScrollEvents.dispatch(MouseScrollEvent(mouseX, mouseY, amount));
 
-  // EventSource<MouseScroll> mouseScroll();
+  final EventStream<MouseScrollEvent, bool> _mouseScrollEvents = EventStream.withBoolResult();
+  EventSource<MouseScrollEvent, bool> get mouseScroll => _mouseScrollEvents.source;
 
   ///
   /// Called when the mouse has been dragged
@@ -276,9 +291,11 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the mouse move and no more
   /// components should be notified
   ///
-  bool onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) => false;
+  bool onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) =>
+      _mouseDragEvents.dispatch(MouseDragEvent(mouseX, mouseY, deltaX, deltaY, button));
 
-  // EventSource<MouseDrag> mouseDrag();
+  final EventStream<MouseDragEvent, bool> _mouseDragEvents = EventStream.withBoolResult();
+  EventSource<MouseDragEvent, bool> get mouseDrag => _mouseDragEvents.source;
 
   ///
   /// Called when a key on the keyboard has been pressed
@@ -291,9 +308,11 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the key-press and no
   /// more components should be notified
   ///
-  bool onKeyPress(int keyCode, int scanCode, int modifiers) => false;
+  bool onKeyPress(int keyCode, int scanCode, int modifiers) =>
+      _keyPressEvents.dispatch(KeyPressEvent(keyCode, scanCode, modifiers));
 
-  // EventSource<KeyPress> keyPress();
+  final EventStream<KeyPressEvent, bool> _keyPressEvents = EventStream.withBoolResult();
+  EventSource<KeyPressEvent, bool> get keyPress => _keyPressEvents.source;
 
   ///
   /// Called when a keyboard input event occurred - namely when
@@ -306,9 +325,10 @@ abstract class Component with Rectangle {
   /// @return {@code true} if this component handled the input and no
   ////// more components should be notified
   ///
-  bool onCharTyped(String chr, int modifiers) => false;
+  bool onCharTyped(String chr, int modifiers) => _charTypedEvents.dispatch(CharTypedEvent(chr, modifiers));
 
-  // EventSource<CharTyped> charTyped();
+  final EventStream<CharTypedEvent, bool> _charTypedEvents = EventStream.withBoolResult();
+  EventSource<CharTypedEvent, bool> get charTyped => _charTypedEvents.source;
 
   ///
   /// @return {@code true} if this component can gain focus
@@ -319,20 +339,18 @@ abstract class Component with Rectangle {
   /// Called when this component gains focus, due
   /// to being clicked or selected via tab-cycling
   ///
-  void onFocusGained(FocusSource source) {}
+  void onFocusGained(FocusSource source) => _focusGainedEvents.dispatch(source);
 
-  // EventSource<FocusGained> focusGained();
+  final EventStream<FocusSource, void> _focusGainedEvents = EventStream.withoutResult();
+  EventSource<FocusSource, void> get focusGained => _focusGainedEvents.source;
 
   ///
   /// Called when this component loses focus
   ///
-  void onFocusLost() {}
+  void onFocusLost() => _focusLostEvents.dispatch(null);
 
-  // EventSource<FocusLost> focusLost();
-
-  // EventSource<MouseEnter> mouseEnter();
-
-  // EventSource<MouseLeave> mouseLeave();
+  final EventStream<void, void> _focusLostEvents = EventStream.withoutResult();
+  EventSource<void, void> get focusLost => _focusLostEvents.source;
 
   ///
   /// Update the state of this component
@@ -352,14 +370,19 @@ abstract class Component with Rectangle {
     if (_hovered != nowHovered) {
       _hovered = nowHovered;
 
-      // TODO: hover events
-      // if (nowHovered) {
-      //     this.mouseEnterEvents.sink().onMouseEnter();
-      // } else {
-      //     this.mouseLeaveEvents.sink().onMouseLeave();
-      // }
+      if (nowHovered) {
+        _mouseEnterEvents.dispatch(null);
+      } else {
+        _mouseLeaveEvents.dispatch(null);
+      }
     }
   }
+
+  final EventStream<void, void> _mouseEnterEvents = EventStream.withoutResult();
+  EventSource<void, void> get mouseEnter => _mouseEnterEvents.source;
+
+  final EventStream<void, void> _mouseLeaveEvents = EventStream.withoutResult();
+  EventSource<void, void> get mouseLeave => _mouseLeaveEvents.source;
 
   ///
   /// Test whether the given coordinates
@@ -486,7 +509,7 @@ extension Configure<C extends Component> on C {
   ///     });
   /// }));
   /// ```
-  configure(void Function(C) closure) {
+  void configure(void Function(C) closure) {
     try {
       _batchedEvents = 1;
       closure(this);
@@ -531,7 +554,7 @@ abstract class ParentComponent extends Component {
   }
 
   /// Recalculate the layout of this component
-  void layout(Size space);
+  void layout(BuildContext context);
 
   /// Queue [task] to be run after the
   /// entire UI has finished updating
@@ -578,17 +601,17 @@ abstract class ParentComponent extends Component {
   }
 
   @override
-  void inflate(Size space) {
-    if (_space == space && !_dirty) return;
-    _space = space;
+  void inflate(BuildContext context) {
+    if (_buildContext == context && !_dirty) return;
+    _buildContext = context;
 
     for (var child in children) {
       child.dismount(DismountReason.layoutInflation);
     }
 
-    super.inflate(space);
-    layout(space);
-    super.inflate(space);
+    super.inflate(context);
+    layout(context);
+    super.inflate(context);
   }
 
   /// Called when [child] has been mutated in some way
@@ -607,7 +630,7 @@ abstract class ParentComponent extends Component {
     var previousSize = fullSize;
 
     _dirty = true;
-    inflate(_space);
+    inflate(_buildContext!);
 
     if (previousSize != fullSize && hasParent) {
       parent!.onChildMutated(this);
@@ -741,6 +764,26 @@ abstract class ParentComponent extends Component {
     }
   }
 
+  @override
+  void updateX(int x) {
+    final offset = x - this.x;
+    super.updateX(x);
+
+    for (var child in children) {
+      child.updateX(child.x + offset);
+    }
+  }
+
+  @override
+  void updateY(int y) {
+    final offset = y - this.y;
+    super.updateY(y);
+
+    for (var child in children) {
+      child.updateY(child.y + offset);
+    }
+  }
+
   /// The offset from the origin of this component
   /// at which children can start to be mounted. Accumulates
   /// padding as well as padding from content sizing
@@ -754,7 +797,7 @@ abstract class ParentComponent extends Component {
   /// positioning is equal to [Positioning.layout], or according to its
   /// intrinsic positioning otherwise
   @protected
-  void mountChild(Component? child, Size space, void Function(Component) layoutFunc) {
+  void mountChild(Component? child, BuildContext context, void Function(Component) layoutFunc) {
     if (child == null) return;
 
     final positioning = child.positioning.value;
@@ -766,7 +809,7 @@ abstract class ParentComponent extends Component {
         layoutFunc(child);
         break;
       case PositioningType.absolute:
-        child.inflate(space);
+        child.inflate(context);
         child.mount(
           this,
           x + positioning.x + componentMargins.left + padding.left,
@@ -774,7 +817,7 @@ abstract class ParentComponent extends Component {
         );
         break;
       case PositioningType.relative:
-        child.inflate(space);
+        child.inflate(context);
         child.mount(
           this,
           x +
@@ -831,14 +874,35 @@ abstract class ParentComponent extends Component {
   /// @param thisSpace The space for layout inflation of this widget
   /// @return The available space for child inflation
   @protected
-  Size get childSpace {
+  BuildContext get childContext {
     final padding = this.padding.value;
 
-    return Size(
-      horizontalSizing.value.isContent ? _space.width - padding.horizontal : width - padding.horizontal,
-      verticalSizing.value.isContent ? _space.height - padding.vertical : height - padding.vertical,
+    return _buildContext!.copy(
+      space: Size(
+        horizontalSizing.value.isContent ? _buildContext!.space.width - padding.horizontal : width - padding.horizontal,
+        verticalSizing.value.isContent ? _buildContext!.space.height - padding.vertical : height - padding.vertical,
+      ),
     );
   }
+}
+
+class BuildContext {
+  final Window window;
+  final TextRenderer textRenderer;
+  final Size space;
+
+  BuildContext(this.window, this.textRenderer, this.space);
+  BuildContext.ofWindow(this.window, this.textRenderer) : space = Size(window.width, window.height);
+
+  BuildContext copy({Window? window, TextRenderer? textRenderer, Size? space}) =>
+      BuildContext(window ?? this.window, textRenderer ?? this.textRenderer, space ?? this.space);
+
+  @override
+  int get hashCode => Object.hash(window, textRenderer, space);
+
+  @override
+  bool operator ==(Object other) =>
+      other is BuildContext && other.window == window && other.textRenderer == textRenderer && other.space == space;
 }
 
 enum VerticalAlignment {

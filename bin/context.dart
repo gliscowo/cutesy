@@ -36,7 +36,6 @@ class DrawContext {
   final Matrix4 projection;
 
   final TextRenderer textRenderer;
-  final FontFamily font;
 
-  DrawContext(this.renderContext, this.primitiveRenderer, this.projection, this.textRenderer, this.font);
+  DrawContext(this.renderContext, this.primitiveRenderer, this.projection, this.textRenderer);
 }

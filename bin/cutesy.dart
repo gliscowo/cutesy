@@ -20,8 +20,8 @@ import 'ui/components/label.dart';
 import 'ui/containers/flow_layout.dart';
 import 'ui/insets.dart';
 import 'ui/inspector.dart';
-import 'ui/math.dart';
 import 'ui/sizing.dart';
+import 'ui/surface.dart';
 import 'window.dart';
 
 typedef GLFWerrorfun = ffi.Void Function(ffi.Int32, ffi.Pointer<ffi.Utf8>);
@@ -119,31 +119,6 @@ void main(List<String> args) {
   double passedTime = 0;
   glfwSwapInterval(0);
 
-  final layout = FlowLayout.horizontal()
-    ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
-      ..horizontalSizing(Sizing.fixed(150))
-      ..verticalSizing(Sizing.fixed(60))
-      ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
-      ..id = "Button 1")
-    ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) => _logger.info("button 2"))
-      ..horizontalSizing(Sizing.fixed(150))
-      ..verticalSizing(Sizing.fixed(150))
-      ..margins(Insets(top: 100, left: 15))
-      ..id = "Button 2")
-    ..addChild(Label(Text.string("AAA"))
-      ..sizing(Sizing.fixed(75))
-      ..color(Color.black)
-      ..verticalTextAlignment = VerticalAlignment.center
-      ..horizontalTextAlignment = HorizontalAlignment.center
-      ..scale = .75)
-    ..padding(Insets.all(10))
-    ..inflate(Size(_window.width, _window.height))
-    ..mount(null, 0, 0);
-
-  _window.onMouseButton.where((event) => event.action == GLFW_PRESS).listen((event) {
-    layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
-  });
-
   final renderContext = RenderContext(_window, [
     hsvProgram,
     posColorProgram,
@@ -156,6 +131,34 @@ void main(List<String> args) {
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
   final textRenderer = TextRenderer(renderContext, font, {"Nunito": font, "CascadiaCode": cascadia});
+
+  final layout = FlowLayout.vertical()
+    ..addChild(FlowLayout.horizontal()
+      ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
+        ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
+        ..id = "Button 1")
+      ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) => _logger.info("button 2"))
+        ..margins(Insets(top: 100, left: 15))
+        ..id = "Button 2")
+      ..addChild(FlowLayout.vertical()
+        ..addChild(Label(Text.string("AAA"))
+          ..color(Color.black)
+          ..verticalTextAlignment = VerticalAlignment.center
+          ..horizontalTextAlignment = HorizontalAlignment.center
+          ..scale = .75)
+        ..addChild(Button(Text.string("hmmm"), (_) {})))
+      ..padding(Insets.all(10))
+      ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)))
+    ..horizontalAlignment(HorizontalAlignment.center)
+    ..verticalAlignment(VerticalAlignment.center)
+    ..sizing(Sizing.fill(100))
+    ..inflate(BuildContext.ofWindow(_window, textRenderer))
+    ..mount(null, 0, 0);
+
+  _window.onMouseButton.where((event) => event.action == GLFW_PRESS).listen((event) {
+    layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
+  });
+
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -167,7 +170,7 @@ void main(List<String> args) {
     textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
         color: Color.black);
 
-    final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer, font);
+    final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
 
     layout.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
     layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), 0, delta);

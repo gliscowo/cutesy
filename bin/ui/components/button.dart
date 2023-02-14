@@ -3,11 +3,12 @@ import '../../context.dart';
 import '../../text/text.dart';
 import '../component.dart';
 import '../math.dart';
+import '../sizing.dart';
 
 typedef ButtonCallback = void Function(Button);
 
 class Button extends Component {
-  final Text text;
+  Text text;
   ButtonCallback callback;
 
   double _hoverTime = 0;
@@ -15,6 +16,12 @@ class Button extends Component {
   Button(this.text, this.callback) {
     cursorStyle = CursorStyle.hand;
   }
+
+  @override
+  int determineHorizontalContentSize(Sizing sizing) => buildContext!.textRenderer.sizeOf(text).width + 30;
+
+  @override
+  int determineVerticalContentSize(Sizing sizing) => buildContext!.textRenderer.sizeOf(text).height + 30;
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta) {
@@ -29,7 +36,7 @@ class Button extends Component {
       y.toDouble(),
       width.toDouble(),
       height.toDouble(),
-      10.0.lerp(_hoverTime, height / 2),
+      10.0.lerp(_hoverTime, 20),
       Color.ofRgb(0x0096FF).interpolate(Color.ofRgb(0x00D7FF), _hoverTime),
       context.projection,
     );

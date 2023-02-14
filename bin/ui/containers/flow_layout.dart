@@ -31,7 +31,7 @@ class FlowLayout extends ParentComponent {
   int determineVerticalContentSize(Sizing sizing) => _contentSize.height + padding.value.vertical;
 
   @override
-  void layout(Size space) => _algorithm(this);
+  void layout(BuildContext context) => _algorithm(this);
 
   @override
   List<Component> get children => _childrenView;
@@ -112,12 +112,12 @@ class FlowLayout extends ParentComponent {
 
     final layout = <Component>[];
     final padding = container.padding.value;
-    final childSpace = container.childSpace;
+    final childContext = container.childContext;
 
-    var mountState = MountingHelper.mountEarly(container.mountChild, container.children, childSpace, (child) {
+    var mountState = MountingHelper.mountEarly(container.mountChild, container.children, childContext, (child) {
       layout.add(child);
 
-      child.inflate(childSpace);
+      child.inflate(childContext);
       child.mount(container, container.x + padding.left + child.margins.value.left + layoutWidth,
           container.y + padding.top + child.margins.value.top);
 
@@ -160,12 +160,12 @@ class FlowLayout extends ParentComponent {
 
     final layout = <Component>[];
     final padding = container.padding.value;
-    final childSpace = container.childSpace;
+    final childContext = container.childContext;
 
-    var mountState = MountingHelper.mountEarly(container.mountChild, container.children, childSpace, (child) {
+    var mountState = MountingHelper.mountEarly(container.mountChild, container.children, childContext, (child) {
       layout.add(child);
 
-      child.inflate(childSpace);
+      child.inflate(childContext);
       child.mount(container, container.x + padding.left + child.margins.value.left,
           container.y + padding.top + child.margins.value.top + layoutHeight);
 
