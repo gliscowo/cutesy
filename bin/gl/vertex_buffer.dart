@@ -53,6 +53,7 @@ class VertexRenderObject<VF extends Function> {
 
 class GlVertexBuffer {
   late final int _id;
+  int _vboSize = 0;
 
   GlVertexBuffer() {
     final idPointer = malloc<Uint32>();
@@ -76,7 +77,14 @@ class GlVertexBuffer {
     buffer.asTypedList(data._cursor).setRange(0, data._cursor, bytes);
 
     glBindBuffer(GL_ARRAY_BUFFER, _id);
-    glBufferData(GL_ARRAY_BUFFER, data._cursor, buffer, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+
+    if (data._cursor > _vboSize) {
+      glBufferData(GL_ARRAY_BUFFER, data._cursor, buffer, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      _vboSize = data._cursor;
+    } else {
+      glBufferSubData(GL_ARRAY_BUFFER, 0, data._cursor, buffer);
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     malloc.free(buffer);
