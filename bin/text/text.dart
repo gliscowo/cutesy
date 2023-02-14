@@ -72,7 +72,10 @@ class Text {
       final glyphInfo = harfbuzz.hb_buffer_get_glyph_infos(buffer, glpyhCount);
       final glyphPos = harfbuzz.hb_buffer_get_glyph_positions(buffer, glpyhCount);
 
-      for (var i = 0; i < glpyhCount.value; i++) {
+      final glyphs = glpyhCount.value;
+      malloc.free(glpyhCount);
+
+      for (var i = 0; i < glyphs; i++) {
         _shapedGlyphs.add(ShapedGlyph._(
           segmentFont.fontForStyle(segment.style),
           glyphInfo[i].codepoint,

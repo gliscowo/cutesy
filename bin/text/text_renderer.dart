@@ -1,4 +1,4 @@
-import 'dart:ffi';
+import 'dart:ffi' hide Size;
 import 'dart:io';
 import 'dart:math';
 
@@ -14,6 +14,7 @@ import '../gl/vertex_buffer.dart';
 import '../gl/vertex_descriptor.dart';
 import '../native/freetype.dart';
 import '../native/harfbuzz.dart';
+import '../ui/math.dart';
 import 'text.dart';
 
 final freetype = FreetypeLibrary(DynamicLibrary.open("resources/lib/libfreetype.so"));
@@ -215,7 +216,7 @@ class TextRenderer {
   FontFamily getFont(String? familyName) =>
       familyName == null ? _defaultFont : _fontStorage[familyName] ?? _defaultFont;
 
-  int widthOf(Text text, {double scale = 1}) {
+  Size sizeOf(Text text, {double scale = 1}) {
     if (!text.isShaped) text.shape(getFont);
 
     int width = 0;
@@ -225,12 +226,10 @@ class TextRenderer {
     }
 
     width += text.glyphs.last.font[text.glyphs.last.index].width;
-    return (width * scale).round();
-  }
-
-  int heightOf(Text text, {double scale = 1}) {
-    if (!text.isShaped) text.shape(getFont);
-    return (text.glyphs.map((e) => e.font[e.index].height).reduce(max) * scale).round();
+    return Size(
+      (width * scale).round(),
+      (text.glyphs.map((e) => e.font[e.index].height).reduce(max) * scale).round(),
+    );
   }
 
   void drawText(int x, int y, Text text, Matrix4 projection, {double scale = 1, Color? color}) {
@@ -248,7 +247,7 @@ class TextRenderer {
               (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, _program)));
     }
 
-    final textHeight = heightOf(text);
+    final textHeight = sizeOf(text).height;
     for (final shapedGlyph in text.glyphs) {
       final fontSize = shapedGlyph.font.size;
       final glyph = shapedGlyph.font[shapedGlyph.index];

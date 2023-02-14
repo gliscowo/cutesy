@@ -34,9 +34,10 @@ class Button extends Component {
       context.projection,
     );
 
+    final textSize = context.textRenderer.sizeOf(text);
     context.textRenderer.drawText(
-      x + (width - context.textRenderer.widthOf(text)) ~/ 2,
-      y + (height - context.textRenderer.heightOf(text)) ~/ 2,
+      x + (width - textSize.width) ~/ 2,
+      y + (height - textSize.height) ~/ 2,
       text,
       context.projection,
     );

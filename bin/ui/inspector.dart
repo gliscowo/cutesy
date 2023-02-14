@@ -7,6 +7,8 @@ import 'component.dart';
 import 'insets.dart';
 
 abstract class Inspector {
+  static const _textScale = .7;
+
   /// Draw the area around the given rectangle which
   /// the given insets describe
   ///
@@ -58,8 +60,6 @@ abstract class Inspector {
           child.height.toDouble(), 5, Color.ofArgb(0xFF3AB0FF), context.projection,
           outlineThickness: 1);
 
-      final textScale = .7;
-
       if (onlyHovered) {
         final nameText = Text.string("${child.runtimeType}${child.id == null ? "" : " '${child.id}'"}");
 
@@ -71,11 +71,12 @@ abstract class Inspector {
                 " <${child.padding.value.top},${child.padding.value.bottom},${child.padding.value.left},${child.padding.value.right}>"),
         ]);
 
+        final nameSize = context.textRenderer.sizeOf(nameText, scale: _textScale);
+        final descriptorSize = context.textRenderer.sizeOf(descriptor, scale: _textScale);
+
         int inspectorX = child.x + 1;
         int inspectorY = child.y + child.height + child.margins.value.bottom + 1;
-        int inspectorHeight = context.textRenderer.heightOf(nameText, scale: textScale) +
-            context.textRenderer.heightOf(descriptor, scale: textScale) +
-            10;
+        int inspectorHeight = nameSize.height + descriptorSize.height + 10;
 
         if (inspectorY > context.renderContext.window.height - inspectorHeight) {
           inspectorY -= child.fullSize.height + inspectorHeight + 1;
@@ -86,18 +87,16 @@ abstract class Inspector {
           }
         }
 
-        int width = max(context.textRenderer.widthOf(nameText, scale: textScale),
-            context.textRenderer.widthOf(descriptor, scale: textScale));
+        int width = max(nameSize.width, descriptorSize.width);
         context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection);
         context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection,
             outlineThickness: 1);
 
-        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection, scale: textScale);
-        context.textRenderer.drawText(inspectorX + 2,
-            inspectorY + context.textRenderer.heightOf(nameText, scale: textScale) + 3, descriptor, context.projection,
-            scale: textScale);
+        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection, scale: _textScale);
+        context.textRenderer.drawText(inspectorX + 2, inspectorY + nameSize.height + 3, descriptor, context.projection,
+            scale: _textScale);
       }
     }
   }

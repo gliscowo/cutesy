@@ -16,6 +16,7 @@ import 'text/text.dart';
 import 'text/text_renderer.dart';
 import 'ui/component.dart';
 import 'ui/components/button.dart';
+import 'ui/components/label.dart';
 import 'ui/containers/flow_layout.dart';
 import 'ui/insets.dart';
 import 'ui/inspector.dart';
@@ -129,6 +130,12 @@ void main(List<String> args) {
       ..verticalSizing(Sizing.fixed(150))
       ..margins(Insets(top: 100, left: 15))
       ..id = "Button 2")
+    ..addChild(Label(Text.string("AAA"))
+      ..sizing(Sizing.fixed(75))
+      ..color(Color.black)
+      ..verticalTextAlignment = VerticalAlignment.center
+      ..horizontalTextAlignment = HorizontalAlignment.center
+      ..scale = .75)
     ..padding(Insets.all(10))
     ..inflate(Size(_window.width, _window.height))
     ..mount(null, 0, 0);
