@@ -1,6 +1,6 @@
 import '../../color.dart';
+import '../../context.dart';
 import '../../text/text.dart';
-import '../../text/text_renderer.dart';
 import '../component.dart';
 import '../math.dart';
 
@@ -35,8 +35,8 @@ class Button extends Component {
     );
 
     final textWidth = (text.width / 64) * text.glyphs[0].font.size;
-    drawText(x.toDouble() + (width - textWidth) / 2, y.toDouble() + (height - text.height) / 2, 1, text,
-        context.renderContext.findProgram("text"), context.projection, Color.white.asVector().rgb);
+    context.textRenderer
+        .drawText(x + (width - textWidth) ~/ 2, y + (height - text.height) ~/ 2, text, context.projection);
   }
 
   @override

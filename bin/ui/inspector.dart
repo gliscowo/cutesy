@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import '../color.dart';
+import '../context.dart';
 import '../text/text.dart';
-import '../text/text_renderer.dart';
 import 'component.dart';
 import 'insets.dart';
 
@@ -99,10 +99,8 @@ abstract class Inspector {
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection,
             outlineThickness: 1);
 
-        drawText(inspectorX + 2, inspectorY + 3, 1, nameText, context.renderContext.findProgram("text"),
-            context.projection, Color.white.asVector().rgb);
-        drawText(inspectorX + 2, inspectorY + nameText.height + 3, 1, descriptor,
-            context.renderContext.findProgram("text"), context.projection, Color.white.asVector().rgb);
+        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection);
+        context.textRenderer.drawText(inspectorX + 2, inspectorY + nameText.height + 3, descriptor, context.projection);
       }
     }
 

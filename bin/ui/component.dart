@@ -1,12 +1,9 @@
 import 'package:glfw/glfw.dart';
 import 'package:meta/meta.dart';
-import 'package:vector_math/vector_math.dart';
 
 import '../color.dart';
-import '../primitive_renderer.dart';
-import '../render_context.dart';
+import '../context.dart';
 import '../text/text.dart';
-import '../text/text_renderer.dart';
 import 'animation.dart';
 import 'insets.dart';
 import 'math.dart';
@@ -906,13 +903,4 @@ enum DismountReason {
   /// The child has been dismounted because it has been removed
   /// from its parent
   removed
-}
-
-class DrawContext {
-  final RenderContext renderContext;
-  final ImmediatePrimitiveRenderer primitiveRenderer;
-  final Matrix4 projection;
-  final FontFamily font;
-
-  DrawContext(this.renderContext, this.primitiveRenderer, this.projection, this.font);
 }

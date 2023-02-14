@@ -22,16 +22,16 @@ final VertexDescriptor<PosColorVertexFunction> posColorVertexDescriptor = Vertex
   },
 );
 
-typedef TextVertexFunction = void Function(double, double, double, double, Vector3);
+typedef TextVertexFunction = void Function(double, double, double, double, Vector4);
 final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
   (attribute) {
     attribute("aPos", VertexElement.float, 2);
     attribute("aUv", VertexElement.float, 2);
-    attribute("aColor", VertexElement.float, 3);
+    attribute("aColor", VertexElement.float, 4);
   },
   (buffer) => (x, y, u, v, color) {
     buffer.float4(x, y, u, v);
-    buffer.float3(color.r, color.g, color.b);
+    buffer.float4(color.r, color.g, color.b, color.a);
   },
 );
 

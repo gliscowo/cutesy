@@ -7,6 +7,8 @@ import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../color.dart';
+import '../context.dart';
 import '../gl/shader.dart';
 import '../gl/vertex_buffer.dart';
 import '../gl/vertex_descriptor.dart';
@@ -199,48 +201,55 @@ class Glyph {
   Glyph(this.textureId, this.u, this.v, this.width, this.height, this.bearingX, this.bearingY);
 }
 
-final _cachedRenderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
+class TextRenderer {
+  final _cachedRenderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
+  final GlProgram _program;
 
-void drawText(double x, double y, double scale, Text text, GlProgram program, Matrix4 projection, Vector3 color) {
-  program.use();
-  program.uniformMat4("uProjection", projection);
+  TextRenderer(RenderContext context) : _program = context.findProgram("text");
 
-  final renderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
-  VertexRenderObject<TextVertexFunction> renderObject(int texture) {
-    return renderObjects[texture] ??
-        (renderObjects[texture] = (_cachedRenderObjects[texture]?..clear()) ??
-            (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, program)));
+  void drawText(int x, int y, Text text, Matrix4 projection, {double scale = 1, Color? color}) {
+    color ??= Color.white;
+    _program
+      ..use()
+      ..uniformMat4("uProjection", projection);
+
+    final renderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
+    VertexRenderObject<TextVertexFunction> renderObject(int texture) {
+      return renderObjects[texture] ??
+          (renderObjects[texture] = (_cachedRenderObjects[texture]?..clear()) ??
+              (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, _program)));
+    }
+
+    final textHeight = text.height;
+    for (final shapedGlyph in text.glyphs) {
+      final fontSize = shapedGlyph.font.size;
+      final glyph = shapedGlyph.font[shapedGlyph.index];
+      final glyphColor = shapedGlyph.style.color?.asVector() ?? color.asVector();
+
+      final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearingX * scale;
+      final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (textHeight - glyph.bearingY) * scale;
+      final width = glyph.width * scale, height = glyph.height * scale;
+
+      final u0 = (glyph.u / 1024), u1 = (glyph.u / 1024) + (glyph.width / 1024);
+      final v0 = (glyph.v / 1024), v1 = (glyph.v / 1024) + (glyph.height / 1024);
+
+      renderObject(glyph.textureId)
+        ..vertex(xPos, yPos, u0, v0, glyphColor)
+        ..vertex(xPos, yPos + height, u0, v1, glyphColor)
+        ..vertex(xPos + width, yPos, u1, v0, glyphColor)
+        ..vertex(xPos + width, yPos, u1, v0, glyphColor)
+        ..vertex(xPos, yPos + height, u0, v1, glyphColor)
+        ..vertex(xPos + width, yPos + height, u1, v1, glyphColor);
+    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
+
+    renderObjects.forEach((texture, vro) {
+      glBindTexture(GL_TEXTURE_2D, texture);
+      vro
+        ..upload(dynamic: true)
+        ..draw();
+    });
   }
-
-  final textHeight = text.height;
-  for (final shapedGlyph in text.glyphs) {
-    final fontSize = shapedGlyph.font.size;
-    final glyph = shapedGlyph.font[shapedGlyph.index];
-    final glyphColor = shapedGlyph.style.color?.asVector().rgb ?? color;
-
-    final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearingX * scale;
-    final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (textHeight - glyph.bearingY) * scale;
-    final width = glyph.width * scale, height = glyph.height * scale;
-
-    final u0 = (glyph.u / 1024), u1 = (glyph.u / 1024) + (glyph.width / 1024);
-    final v0 = (glyph.v / 1024), v1 = (glyph.v / 1024) + (glyph.height / 1024);
-
-    renderObject(glyph.textureId)
-      ..vertex(xPos, yPos, u0, v0, glyphColor)
-      ..vertex(xPos, yPos + height, u0, v1, glyphColor)
-      ..vertex(xPos + width, yPos, u1, v0, glyphColor)
-      ..vertex(xPos + width, yPos, u1, v0, glyphColor)
-      ..vertex(xPos, yPos + height, u0, v1, glyphColor)
-      ..vertex(xPos + width, yPos + height, u1, v1, glyphColor);
-  }
-
-  glActiveTexture(GL_TEXTURE0);
-  glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
-
-  renderObjects.forEach((texture, vro) {
-    glBindTexture(GL_TEXTURE_2D, texture);
-    vro
-      ..upload(dynamic: true)
-      ..draw();
-  });
 }

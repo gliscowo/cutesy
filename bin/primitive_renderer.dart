@@ -2,10 +2,10 @@ import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'color.dart';
+import 'context.dart';
 import 'gl/framebuffer.dart';
 import 'gl/vertex_buffer.dart';
 import 'gl/vertex_descriptor.dart';
-import 'render_context.dart';
 
 class ImmediatePrimitiveRenderer {
   final RenderContext _context;

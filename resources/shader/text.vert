@@ -2,10 +2,10 @@
 
 in vec2 aPos; // <vec2 pos, vec2 tex>
 in vec2 aUv; // <vec2 pos, vec2 tex>
-in vec3 aColor; // <vec2 pos, vec2 tex>
+in vec4 aColor; // <vec2 pos, vec2 tex>
 
 out vec2 texCoords;
-out vec3 textColor;
+out vec4 textColor;
 
 uniform mat4 uProjection;
 

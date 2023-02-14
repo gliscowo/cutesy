@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_function_declarations_over_variables
 
 import '../color.dart';
+import '../context.dart';
 import 'component.dart';
 
 typedef Surface = void Function(DrawContext, Component);

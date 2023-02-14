@@ -1,4 +1,8 @@
+import 'package:vector_math/vector_math.dart';
+
 import 'gl/shader.dart';
+import 'primitive_renderer.dart';
+import 'text/text_renderer.dart';
 import 'window.dart';
 
 typedef ProgramLookup = GlProgram Function(String);
@@ -23,4 +27,16 @@ class RenderContext {
 
     return program;
   }
+}
+
+class DrawContext {
+  final RenderContext renderContext;
+  final ImmediatePrimitiveRenderer primitiveRenderer;
+
+  final Matrix4 projection;
+
+  final TextRenderer textRenderer;
+  final FontFamily font;
+
+  DrawContext(this.renderContext, this.primitiveRenderer, this.projection, this.textRenderer, this.font);
 }

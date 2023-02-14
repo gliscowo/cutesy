@@ -8,10 +8,10 @@ import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'color.dart';
+import 'context.dart';
 import 'gl/debug.dart';
 import 'gl/shader.dart';
 import 'primitive_renderer.dart';
-import 'render_context.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
 import 'ui/component.dart';
@@ -149,6 +149,7 @@ void main(List<String> args) {
   ]);
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
+  final textRenderer = TextRenderer(renderContext);
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -157,10 +158,9 @@ void main(List<String> args) {
     final delta = glfwGetTime() - lastTime;
     lastTime = glfwGetTime();
 
-    drawText(
-        5, 5, 1, Text.string("$lastFps FPS")..shape(cascadia), textProgram, projection, Color.black.asVector().rgb);
+    textRenderer.drawText(5, 5, Text.string("$lastFps FPS")..shape(cascadia), projection, color: Color.black);
 
-    final drawContext = DrawContext(renderContext, primitiveRenderer, projection, font);
+    final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer, font);
 
     layout.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
     layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), 0, delta);
