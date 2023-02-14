@@ -205,9 +205,37 @@ class TextRenderer {
   final _cachedRenderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
   final GlProgram _program;
 
-  TextRenderer(RenderContext context) : _program = context.findProgram("text");
+  final FontFamily _defaultFont;
+  final Map<String, FontFamily> _fontStorage;
+
+  TextRenderer(RenderContext context, this._defaultFont, Map<String, FontFamily> fontStorage)
+      : _program = context.findProgram("text"),
+        _fontStorage = Map.unmodifiable(fontStorage);
+
+  FontFamily getFont(String? familyName) =>
+      familyName == null ? _defaultFont : _fontStorage[familyName] ?? _defaultFont;
+
+  int widthOf(Text text, {double scale = 1}) {
+    if (!text.isShaped) text.shape(getFont);
+
+    int width = 0;
+    for (var i = 0; i < text.glyphs.length - 1; i++) {
+      final glyph = text.glyphs[i];
+      width += _hbToPixels(glyph.advance.x, glyph.font.size);
+    }
+
+    width += text.glyphs.last.font[text.glyphs.last.index].width;
+    return (width * scale).round();
+  }
+
+  int heightOf(Text text, {double scale = 1}) {
+    if (!text.isShaped) text.shape(getFont);
+    return (text.glyphs.map((e) => e.font[e.index].height).reduce(max) * scale).round();
+  }
 
   void drawText(int x, int y, Text text, Matrix4 projection, {double scale = 1, Color? color}) {
+    if (!text.isShaped) text.shape(getFont);
+
     color ??= Color.white;
     _program
       ..use()
@@ -220,14 +248,14 @@ class TextRenderer {
               (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, _program)));
     }
 
-    final textHeight = text.height;
+    final textHeight = heightOf(text);
     for (final shapedGlyph in text.glyphs) {
       final fontSize = shapedGlyph.font.size;
       final glyph = shapedGlyph.font[shapedGlyph.index];
       final glyphColor = shapedGlyph.style.color?.asVector() ?? color.asVector();
 
-      final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearingX * scale;
-      final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (textHeight - glyph.bearingY) * scale;
+      final xPos = x + _hbToPixels(shapedGlyph.position.x, fontSize) * scale + glyph.bearingX * scale;
+      final yPos = y + _hbToPixels(shapedGlyph.position.y, fontSize) * scale + (textHeight - glyph.bearingY) * scale;
       final width = glyph.width * scale, height = glyph.height * scale;
 
       final u0 = (glyph.u / 1024), u1 = (glyph.u / 1024) + (glyph.width / 1024);
@@ -252,4 +280,6 @@ class TextRenderer {
         ..draw();
     });
   }
+
+  int _hbToPixels(double hbUnits, int fontSize) => ((hbUnits / 64) * fontSize).round();
 }

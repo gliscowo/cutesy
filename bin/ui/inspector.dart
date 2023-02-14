@@ -38,10 +38,6 @@ abstract class Inspector {
   /// @param mouseY      The y-coordinate of the mouse pointer
   /// @param onlyHovered Whether to only draw the inspector for the hovered widget
   static void drawInspector(DrawContext context, ParentComponent root, double mouseX, double mouseY, bool onlyHovered) {
-    // RenderSystem.disableDepthTest();
-    // var client = MinecraftClient.getInstance();
-    // var textRenderer = client.textRenderer;
-
     final children = <Component>[];
     if (!onlyHovered) {
       root.collectChildren(children);
@@ -50,10 +46,10 @@ abstract class Inspector {
     }
 
     for (var child in children) {
-      // if (child is ParentComponent) {
-      //   drawInsets(context, child.x, child.y, child.width, child.height, child.padding.value.inverted,
-      //       Color.ofArgb(0xA70CECDD));
-      // }
+      if (child is ParentComponent) {
+        drawInsets(context, child.x, child.y, child.width, child.height, child.padding.value.inverted,
+            Color.ofArgb(0xA70CECDD));
+      }
 
       final margins = child.margins.value;
       drawInsets(context, child.x, child.y, child.width, child.height, margins, Color.ofArgb(0xA7FFF338));
@@ -62,9 +58,10 @@ abstract class Inspector {
           child.height.toDouble(), 5, Color.ofArgb(0xFF3AB0FF), context.projection,
           outlineThickness: 1);
 
+      final textScale = .7;
+
       if (onlyHovered) {
-        final nameText = Text.string("${child.runtimeType}${child.id == null ? "" : " '${child.id}'"}")
-          ..shape(context.font);
+        final nameText = Text.string("${child.runtimeType}${child.id == null ? "" : " '${child.id}'"}");
 
         final descriptor = Text([
           StyledString(
@@ -72,12 +69,13 @@ abstract class Inspector {
           if (child is ParentComponent)
             StyledString(
                 " <${child.padding.value.top},${child.padding.value.bottom},${child.padding.value.left},${child.padding.value.right}>"),
-        ])
-          ..shape(context.font);
+        ]);
 
         int inspectorX = child.x + 1;
         int inspectorY = child.y + child.height + child.margins.value.bottom + 1;
-        int inspectorHeight = nameText.height + descriptor.height + 10;
+        int inspectorHeight = context.textRenderer.heightOf(nameText, scale: textScale) +
+            context.textRenderer.heightOf(descriptor, scale: textScale) +
+            10;
 
         if (inspectorY > context.renderContext.window.height - inspectorHeight) {
           inspectorY -= child.fullSize.height + inspectorHeight + 1;
@@ -88,22 +86,19 @@ abstract class Inspector {
           }
         }
 
-        int width = max(
-              (nameText.width ~/ 64) * context.font.defaultFont.size,
-              (descriptor.width ~/ 64) * context.font.defaultFont.size,
-            ) +
-            25;
+        int width = max(context.textRenderer.widthOf(nameText, scale: textScale),
+            context.textRenderer.widthOf(descriptor, scale: textScale));
         context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection);
         context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection,
             outlineThickness: 1);
 
-        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection);
-        context.textRenderer.drawText(inspectorX + 2, inspectorY + nameText.height + 3, descriptor, context.projection);
+        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection, scale: textScale);
+        context.textRenderer.drawText(inspectorX + 2,
+            inspectorY + context.textRenderer.heightOf(nameText, scale: textScale) + 3, descriptor, context.projection,
+            scale: textScale);
       }
     }
-
-    // RenderSystem.enableDepthTest();
   }
 }

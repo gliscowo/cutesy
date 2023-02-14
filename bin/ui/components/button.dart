@@ -25,18 +25,21 @@ class Button extends Component {
     }
 
     context.primitiveRenderer.roundedRect(
-      x.toDouble() + 1,
-      y.toDouble() + 1,
-      width.toDouble() - 2,
-      height.toDouble() - 2,
-      10.0.lerp(_hoverTime, 20.0),
+      x.toDouble(),
+      y.toDouble(),
+      width.toDouble(),
+      height.toDouble(),
+      10.0.lerp(_hoverTime, height / 2),
       Color.ofRgb(0x0096FF).interpolate(Color.ofRgb(0x00D7FF), _hoverTime),
       context.projection,
     );
 
-    final textWidth = (text.width / 64) * text.glyphs[0].font.size;
-    context.textRenderer
-        .drawText(x + (width - textWidth) ~/ 2, y + (height - text.height) ~/ 2, text, context.projection);
+    context.textRenderer.drawText(
+      x + (width - context.textRenderer.widthOf(text)) ~/ 2,
+      y + (height - context.textRenderer.heightOf(text)) ~/ 2,
+      text,
+      context.projection,
+    );
   }
 
   @override

@@ -119,18 +119,17 @@ void main(List<String> args) {
   glfwSwapInterval(0);
 
   final layout = FlowLayout.horizontal()
-    ..addChild(
-        Button(Text.string("Button", style: TextStyle(bold: true))..shape(font), (p0) => _logger.info("button 1"))
-          ..horizontalSizing(Sizing.fixed(150))
-          ..verticalSizing(Sizing.fixed(60))
-          ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
-          ..id = "Button 1")
-    ..addChild(
-        Button(Text.string("Button 2", style: TextStyle(bold: true))..shape(font), (p0) => _logger.info("button 2"))
-          ..horizontalSizing(Sizing.fixed(150))
-          ..verticalSizing(Sizing.fixed(60))
-          ..margins(Insets(top: 100, left: 15))
-          ..id = "Button 2")
+    ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
+      ..horizontalSizing(Sizing.fixed(150))
+      ..verticalSizing(Sizing.fixed(60))
+      ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
+      ..id = "Button 1")
+    ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) => _logger.info("button 2"))
+      ..horizontalSizing(Sizing.fixed(150))
+      ..verticalSizing(Sizing.fixed(150))
+      ..margins(Insets(top: 100, left: 15))
+      ..id = "Button 2")
+    ..padding(Insets.all(10))
     ..inflate(Size(_window.width, _window.height))
     ..mount(null, 0, 0);
 
@@ -149,7 +148,7 @@ void main(List<String> args) {
   ]);
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
-  final textRenderer = TextRenderer(renderContext);
+  final textRenderer = TextRenderer(renderContext, font, {"Nunito": font, "CascadiaCode": cascadia});
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -158,7 +157,8 @@ void main(List<String> args) {
     final delta = glfwGetTime() - lastTime;
     lastTime = glfwGetTime();
 
-    textRenderer.drawText(5, 5, Text.string("$lastFps FPS")..shape(cascadia), projection, color: Color.black);
+    textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
+        color: Color.black);
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer, font);
 
