@@ -13,6 +13,7 @@ typedef _GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
 typedef _GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32, Int32);
 typedef _GLFWcharfun = Void Function(Pointer<GLFWwindow>, Int32);
 typedef _GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
+typedef _GLFWmousebuttonfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32);
 
 class Window {
   static final Map<int, Window> _knownWindows = {};
@@ -21,6 +22,7 @@ class Window {
   final StreamController<Window> _resizeListeners = StreamController.broadcast(sync: true);
   final StreamController<int> _charInputListeners = StreamController.broadcast(sync: true);
   final StreamController<KeyInputEvent> _keyInputListeners = StreamController.broadcast(sync: true);
+  final StreamController<MouseInputEvent> _mouseInputListeners = StreamController.broadcast(sync: true);
   final Vector2 _cursorPos = Vector2.zero();
 
   late int _x;
@@ -67,6 +69,7 @@ class Window {
     glfwSetWindowSizeCallback(_handle, Pointer.fromFunction<_GLFWwindowresizefun>(_onResize));
     glfwSetWindowPosCallback(_handle, Pointer.fromFunction<_GLFWwindowposfun>(_onMove));
     glfwSetCursorPosCallback(_handle, Pointer.fromFunction<_GLFWcursorposfun>(_onMousePos));
+    glfwSetMouseButtonCallback(_handle, Pointer.fromFunction<_GLFWmousebuttonfun>(_onMouseButton));
     glfwSetCharCallback(_handle, Pointer.fromFunction<_GLFWcharfun>(_onChar));
     glfwSetKeyCallback(_handle, Pointer.fromFunction<_GLFWkeyfun>(_onKey));
   }
@@ -95,6 +98,13 @@ class Window {
 
     window._cursorPos.x = mouseX;
     window._cursorPos.y = mouseY;
+  }
+
+  static void _onMouseButton(Pointer<GLFWwindow> handle, int button, int action, int mods) {
+    if (!_knownWindows.containsKey(handle.address)) return;
+    final window = _knownWindows[handle.address]!;
+
+    window._mouseInputListeners.add(MouseInputEvent(button, action, mods));
   }
 
   static void _onChar(Pointer<GLFWwindow> handle, int codepoint) {
@@ -150,6 +160,7 @@ class Window {
   Stream<Window> get onResize => _resizeListeners.stream;
   Stream<int> get onChar => _charInputListeners.stream;
   Stream<KeyInputEvent> get onKey => _keyInputListeners.stream;
+  Stream<MouseInputEvent> get onMouseButton => _mouseInputListeners.stream;
 
   int get x => _x;
   int get y => _y;
@@ -161,4 +172,9 @@ class Window {
 class KeyInputEvent {
   final int key, scancode, action, mods;
   KeyInputEvent(this.key, this.scancode, this.action, this.mods);
+}
+
+class MouseInputEvent {
+  final int button, action, mods;
+  MouseInputEvent(this.button, this.action, this.mods);
 }
