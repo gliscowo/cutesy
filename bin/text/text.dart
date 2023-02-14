@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:bidi/bidi.dart';
 import 'package:ffi/ffi.dart';
@@ -36,6 +37,14 @@ class Text {
     return _shapedGlyphs;
   }
 
+  int get width {
+    return _shapedGlyphs.map((e) => e.advance.x).reduce((sum, e) => sum + e).round();
+  }
+
+  int get height {
+    return _shapedGlyphs.map((e) => e.font[e.index].height).reduce(max).round();
+  }
+
   void shape(FontFamily fontFamily) {
     int cursorX = 0, cursorY = 0;
 
@@ -70,6 +79,10 @@ class Text {
             cursorX + glyphPos[i].x_offset.toDouble(),
             cursorY + glyphPos[i].y_offset.toDouble(),
           ),
+          Vector2(
+            glyphPos[i].x_advance.toDouble(),
+            glyphPos[i].y_advance.toDouble(),
+          ),
           segment.style,
         ));
 
@@ -86,6 +99,7 @@ class ShapedGlyph {
   final Font font;
   final int index;
   final Vector2 position;
+  final Vector2 advance;
   final TextStyle style;
-  ShapedGlyph._(this.font, this.index, this.position, this.style);
+  ShapedGlyph._(this.font, this.index, this.position, this.advance, this.style);
 }

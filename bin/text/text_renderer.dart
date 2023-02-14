@@ -29,7 +29,7 @@ class FontFamily {
     final fontFiles = Directory("resources/font/$familyName")
         .listSync()
         .whereType<File>()
-        .where((file) => file.path.endsWith(".otf"));
+        .where((file) => file.path.endsWith(".otf") || file.path.endsWith(".ttf"));
 
     for (final font in fontFiles) {
       _allFonts.add(Font(font.absolute.path, size));
@@ -199,26 +199,27 @@ class Glyph {
   Glyph(this.textureId, this.u, this.v, this.width, this.height, this.bearingX, this.bearingY);
 }
 
-final _cachedRenderObjects = <int, VertexRenderObject>{};
+final _cachedRenderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
 
 void drawText(double x, double y, double scale, Text text, GlProgram program, Matrix4 projection, Vector3 color) {
   program.use();
   program.uniformMat4("uProjection", projection);
 
-  final renderObjects = <int, VertexRenderObject>{};
-  VertexRenderObject renderObject(int texture) {
+  final renderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
+  VertexRenderObject<TextVertexFunction> renderObject(int texture) {
     return renderObjects[texture] ??
         (renderObjects[texture] = (_cachedRenderObjects[texture]?..clear()) ??
             (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, program)));
   }
 
+  final textHeight = text.height;
   for (final shapedGlyph in text.glyphs) {
     final fontSize = shapedGlyph.font.size;
     final glyph = shapedGlyph.font[shapedGlyph.index];
     final glyphColor = shapedGlyph.style.color?.asVector().rgb ?? color;
 
     final xPos = x + (shapedGlyph.position.x / 64 * fontSize) * scale + glyph.bearingX * scale;
-    final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (fontSize - glyph.bearingY) * scale;
+    final yPos = y + (shapedGlyph.position.y / 64 * fontSize) * scale + (textHeight - glyph.bearingY) * scale;
     final width = glyph.width * scale, height = glyph.height * scale;
 
     final u0 = (glyph.u / 1024), u1 = (glyph.u / 1024) + (glyph.width / 1024);
