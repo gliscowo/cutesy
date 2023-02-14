@@ -1,12 +1,12 @@
 import '../component.dart';
 import '../positioning.dart';
 
-typedef ComponentSink = void Function(Component?, BuildContext, void Function(Component));
+typedef ComponentSink = void Function(Component?, LayoutContext, void Function(Component));
 
 class MountingHelper {
   final ComponentSink _sink;
   final List<Component> _lateChildren = [];
-  final BuildContext _childContext;
+  final LayoutContext _childContext;
 
   MountingHelper.mountEarly(
       this._sink, List<Component> children, this._childContext, void Function(Component) layoutFunc) {

@@ -26,7 +26,7 @@ class Label extends Component {
   int determineVerticalContentSize(Sizing sizing) => _textSize!.height + 2;
 
   @override
-  void draw(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta) {
+  void draw(DrawContext context, int mouseX, int mouseY, double delta) {
     final xOffset = horizontalTextAlignment.align(_textSize!.width, width);
     final yOffset = verticalTextAlignment.align(_textSize!.height, height);
 
@@ -34,7 +34,7 @@ class Label extends Component {
         .drawText(x + xOffset, y + yOffset, _text, context.projection, color: color.value, scale: scale);
   }
 
-  Size? get _textSize => _textSizeCache ??= buildContext?.textRenderer.sizeOf(text, scale: scale);
+  Size? get _textSize => _textSizeCache ??= layoutContext?.textRenderer.sizeOf(text, scale: scale);
 
   Text get text => _text;
 

@@ -31,15 +31,15 @@ class FlowLayout extends ParentComponent {
   int determineVerticalContentSize(Sizing sizing) => _contentSize.height + padding.value.vertical;
 
   @override
-  void layout(BuildContext context) => _algorithm(this);
+  void layout(LayoutContext context) => _algorithm(this);
 
   @override
   List<Component> get children => _childrenView;
 
   @override
-  void draw(DrawContext matrices, int mouseX, int mouseY, double partialTicks, double delta) {
-    super.draw(matrices, mouseX, mouseY, partialTicks, delta);
-    drawChildren(matrices, mouseX, mouseY, partialTicks, delta, _children);
+  void draw(DrawContext matrices, int mouseX, int mouseY, double delta) {
+    super.draw(matrices, mouseX, mouseY, delta);
+    drawChildren(matrices, mouseX, mouseY, delta, _children);
   }
 
   /// Add [child] to this layout. If you need to add multiple

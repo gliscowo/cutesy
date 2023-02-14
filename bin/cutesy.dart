@@ -152,7 +152,7 @@ void main(List<String> args) {
     ..horizontalAlignment(HorizontalAlignment.center)
     ..verticalAlignment(VerticalAlignment.center)
     ..sizing(Sizing.fill(100))
-    ..inflate(BuildContext.ofWindow(_window, textRenderer))
+    ..inflate(LayoutContext.ofWindow(_window, textRenderer))
     ..mount(null, 0, 0);
 
   _window.onMouseButton.where((event) => event.action == GLFW_PRESS).listen((event) {
@@ -173,7 +173,7 @@ void main(List<String> args) {
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
 
     layout.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
-    layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), 0, delta);
+    layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), delta);
 
     if (inspector) {
       Inspector.drawInspector(drawContext, layout, _window.cursorX, _window.cursorY, true);

@@ -19,7 +19,7 @@ abstract class Component with Rectangle {
 
   ParentComponent? _parent;
   bool _mounted = false;
-  BuildContext? _buildContext;
+  LayoutContext? _layoutContext;
 
   int _batchedEvents = 0;
   bool _dirty = false;
@@ -45,14 +45,8 @@ abstract class Component with Rectangle {
     Observable.observeAll(notifyParentIfMounted, [margins, positioning, horizontalSizing, verticalSizing]);
   }
 
-  /// Draw the current state of this component onto the screen
-  ///
-  /// @param matrices     The transformation stack
-  /// @param mouseX       The mouse pointer's x-coordinate
-  /// @param mouseY       The mouse pointer's y-coordinate
-  /// @param partialTicks The fraction of the current tick that has passed
-  /// @param delta        The duration of the last frame, in partial ticks
-  void draw(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta);
+  /// Draw the current state of this component
+  void draw(DrawContext context, int mouseX, int mouseY, double delta);
 
   ///
   /// Draw the current tooltip of this component onto the screen
@@ -63,20 +57,14 @@ abstract class Component with Rectangle {
   /// @param partialTicks The fraction of the current tick that has passed
   /// @param delta        The duration of the last frame, in partial ticks
   ///
-  // default void drawTooltip(MatrixStack matrices, int mouseX, int mouseY, double partialTicks, double delta) {
+  // default void drawTooltip(MatrixStack matrices, int mouseX, int mouseY, double delta) {
   //     if (!this.shouldDrawTooltip(mouseX, mouseY)) return;
   //     Drawer.drawTooltip(matrices, mouseX, mouseY, this.tooltip());
   // }
 
   /// Draw something which clearly indicates
   /// that this component is currently focused
-  ///
-  /// @param matrices     The transformation stack
-  /// @param mouseX       The mouse pointer's x-coordinate
-  /// @param mouseY       The mouse pointer's y-coordinate
-  /// @param partialTicks The fraction of the current tick that has passed
-  /// @param delta        The duration of the last frame, in partial ticks
-  void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta) {
+  void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double delta) {
     context.primitiveRenderer.roundedRect(
       x.toDouble(),
       y.toDouble(),
@@ -116,14 +104,8 @@ abstract class Component with Rectangle {
   /// The sizing method this component uses on the y-axis
   final AnimatableProperty<Sizing> verticalSizing = AnimatableProperty.create(Sizing.content());
 
-  ///
-  /// Determine if this component should currently
-  /// render its tooltip
-  ///
-  /// @param mouseX The mouse cursor's x-coordinate
-  /// @param mouseY The mouse cursor's y-coordinate
-  /// @return {@code true} if the tooltip should be rendered
-  ///
+  /// Determine whether this component should
+  /// currently draw its tooltip
   bool shouldDrawTooltip(double mouseX, double mouseY) => tooltip != null && isInBoundingBox(mouseX, mouseY);
 
   int determineHorizontalContentSize(Sizing sizing) =>
@@ -133,15 +115,15 @@ abstract class Component with Rectangle {
       throw UnimplementedError("$runtimeType does not support content-sizing on the horizontal axis");
 
   /// The last known environment in which this
-  /// component was built. This is useful when emitting
+  /// component was layed out. This is useful when emitting
   /// layout updates from within a parent component
   @protected
-  BuildContext? get buildContext => _buildContext;
+  LayoutContext? get layoutContext => _layoutContext;
 
   /// Inflate this component into some amount
   /// of available space, given by [space]
-  void inflate(BuildContext context) {
-    _buildContext = context;
+  void inflate(LayoutContext context) {
+    _layoutContext = context;
     applySizing();
     _dirty = false;
   }
@@ -153,8 +135,8 @@ abstract class Component with Rectangle {
 
     final margins = this.margins.value;
 
-    _width = horizontalSizing.inflate(_buildContext!.space.width - margins.horizontal, determineHorizontalContentSize);
-    _height = verticalSizing.inflate(_buildContext!.space.height - margins.vertical, determineVerticalContentSize);
+    _width = horizontalSizing.inflate(_layoutContext!.space.width - margins.horizontal, determineHorizontalContentSize);
+    _height = verticalSizing.inflate(_layoutContext!.space.height - margins.vertical, determineVerticalContentSize);
   }
 
   @protected
@@ -172,7 +154,7 @@ abstract class Component with Rectangle {
 
   /// Called when this component is mounted onto [parent] during the layout process.
   ///
-  /// **This must only ever happen after the component has been inflated**
+  /// **This must only ever be called after the component has been inflated**
   void mount(ParentComponent? parent, int x, int y) {
     _parent = parent;
     _mounted = true;
@@ -224,142 +206,88 @@ abstract class Component with Rectangle {
     });
   }
 
-  ///
   /// Called when the mouse has been clicked inside
   /// the bounding box of this component
   ///
-  /// @param mouseX The x coordinate at which the mouse was clicked, relative
-  ///               to this component's bounding box root
-  /// @param mouseY The y coordinate at which the mouse was clicked, relative
-  ///               to this component's bounding box root
-  /// @param button The mouse button which was clicked, refer to the constants
-  ///               in {@link org.lwjgl.glfw.GLFW}
-  /// @return {@code true} if this component handled the click and no more
-  /// components should be notified
-  ///
+  /// **Mouse coordinates are relative to the component**
   bool onMouseDown(double mouseX, double mouseY, int button) =>
       _mouseDownEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
 
   final EventStream<MouseButtonEvent, bool> _mouseDownEvents = EventStream.withBoolResult();
   EventSource<MouseButtonEvent, bool> get mouseDown => _mouseDownEvents.source;
 
-  ///
   /// Called when a mouse button has been released
   /// while this component is focused
   ///
-  /// @param button The mouse button which was released, refer to the constants
-  ///               in {@link org.lwjgl.glfw.GLFW}
-  /// @return {@code true} if this component handled the event and no more
-  /// components should be notified
-  ///
+  /// **Mouse coordinates are relative to the component**
   bool onMouseUp(double mouseX, double mouseY, int button) =>
       _mouseUpEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
 
   final EventStream<MouseButtonEvent, bool> _mouseUpEvents = EventStream.withBoolResult();
   EventSource<MouseButtonEvent, bool> get mouseUp => _mouseUpEvents.source;
 
-  ///
   /// Called when the mouse has been scrolled inside
   /// the bounding box of this component
   ///
-  /// @param mouseX The x coordinate at which the mouse pointer is, relative
-  ///               to this component's bounding box root
-  /// @param mouseY The y coordinate at which the mouse pointer is, relative
-  ///               to this component's bounding box root
-  /// @param amount How far the mouse was scrolled
-  /// @return {@code true} if this component handled the scroll event
-  /// and no more components should be notified
-  ///
+  /// **Mouse coordinates are relative to the component**
   bool onMouseScroll(double mouseX, double mouseY, double amount) =>
       _mouseScrollEvents.dispatch(MouseScrollEvent(mouseX, mouseY, amount));
 
   final EventStream<MouseScrollEvent, bool> _mouseScrollEvents = EventStream.withBoolResult();
   EventSource<MouseScrollEvent, bool> get mouseScroll => _mouseScrollEvents.source;
 
+  /// Called when the mouse has been dragged, starting at [mouseX],[mouseY]
+  /// while this component is focused .[deltaX] and [deltaY] describe how far the mouse
+  /// was moved on the x and y axis respectively
   ///
-  /// Called when the mouse has been dragged
-  /// while this component is focused
-  ///
-  /// @param mouseX The x coordinate at which the mouse was dragged, relative
-  ///               to this component's bounding box root
-  /// @param mouseY The y coordinate at which the mouse was dragged, relative
-  ///               to this component's bounding box root
-  /// @param deltaX How far the mouse was moved on the x-axis
-  /// @param deltaY How far the mouse was moved on the y-axis
-  /// @param button The mouse button which was clicked, refer to the constants
-  ///               in {@link org.lwjgl.glfw.GLFW}
-  /// @return {@code true} if this component handled the mouse move and no more
-  /// components should be notified
-  ///
+  /// **Mouse coordinates are relative to the component**
   bool onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) =>
       _mouseDragEvents.dispatch(MouseDragEvent(mouseX, mouseY, deltaX, deltaY, button));
 
   final EventStream<MouseDragEvent, bool> _mouseDragEvents = EventStream.withBoolResult();
   EventSource<MouseDragEvent, bool> get mouseDrag => _mouseDragEvents.source;
 
-  ///
-  /// Called when a key on the keyboard has been pressed
+  /// Called when a key has been pressed
   /// while this component is focused
   ///
-  /// @param keyCode   The key token of the pressed key, refer to the constants in {@link org.lwjgl.glfw.GLFW}
-  /// @param scanCode  A platform-specific scancode uniquely identifying the exact key that was pressed
-  /// @param modifiers A bitfield describing which modifier keys were pressed,
-  ///                  refer to <a href="https://www.glfw.org/docs/3.3/group__mods.html">GLFW Modifier key flags</a>
-  /// @return {@code true} if this component handled the key-press and no
-  /// more components should be notified
-  ///
+  /// - [keyCode] is a GLFW key code
+  /// - [scanCode] is platform-specific scancode uniquely identifying
+  ///   the exact key that was pressed
+  /// - [modifiers] is a bitfield describing which modifier keys were held,
+  ///    refer to <a href="https://www.glfw.org/docs/3.3/group__mods.html">GLFW Modifier key flags</a>
   bool onKeyPress(int keyCode, int scanCode, int modifiers) =>
       _keyPressEvents.dispatch(KeyPressEvent(keyCode, scanCode, modifiers));
 
   final EventStream<KeyPressEvent, bool> _keyPressEvents = EventStream.withBoolResult();
   EventSource<KeyPressEvent, bool> get keyPress => _keyPressEvents.source;
 
-  ///
   /// Called when a keyboard input event occurred - namely when
   /// a key has been pressed and the OS determined it should result
-  /// in a character being typed
-  ///
-  /// @param chr       The character that was typed
-  /// @param modifiers A bitfield describing which modifier keys were pressed,
-  ///                  refer to <a href="https://www.glfw.org/docs/3.3/group__mods.html">GLFW Modifier key flags</a>
-  /// @return {@code true} if this component handled the input and no
-  ////// more components should be notified
-  ///
+  /// in [chr] being typed
   bool onCharTyped(String chr, int modifiers) => _charTypedEvents.dispatch(CharTypedEvent(chr, modifiers));
 
   final EventStream<CharTypedEvent, bool> _charTypedEvents = EventStream.withBoolResult();
   EventSource<CharTypedEvent, bool> get charTyped => _charTypedEvents.source;
 
-  ///
-  /// @return {@code true} if this component can gain focus
-  ///
+  /// Whether this component can gain focus from [source]
   bool canFocus(FocusSource source) => false;
 
-  ///
   /// Called when this component gains focus, due
   /// to being clicked or selected via tab-cycling
-  ///
   void onFocusGained(FocusSource source) => _focusGainedEvents.dispatch(source);
 
   final EventStream<FocusSource, void> _focusGainedEvents = EventStream.withoutResult();
   EventSource<FocusSource, void> get focusGained => _focusGainedEvents.source;
 
-  ///
   /// Called when this component loses focus
-  ///
   void onFocusLost() => _focusLostEvents.dispatch(null);
 
   final EventStream<void, void> _focusLostEvents = EventStream.withoutResult();
   EventSource<void, void> get focusLost => _focusLostEvents.source;
 
-  ///
-  /// Update the state of this component
-  /// before drawing the next frame
-  ///
-  /// @param delta  The duration of the last frame, in partial ticks
-  /// @param mouseX The mouse pointer's x-coordinate
-  /// @param mouseY The mouse pointer's y-coordinate
-  ///
+  /// Update the state of this component before drawing
+  /// the next frame, where [delta] is the time (in seconds)
+  /// that has passed since the last frame
   void update(double delta, int mouseX, int mouseY) {
     margins.update(delta);
     positioning.update(delta);
@@ -384,23 +312,14 @@ abstract class Component with Rectangle {
   final EventStream<void, void> _mouseLeaveEvents = EventStream.withoutResult();
   EventSource<void, void> get mouseLeave => _mouseLeaveEvents.source;
 
-  ///
-  /// Test whether the given coordinates
-  /// are inside this component's bounding box
-  ///
-  /// @param x The x-coordinate to test
-  /// @param y The y-coordinate to test
-  /// @return {@code true} if this component's bounding box encloses
-  /// the given coordinates
-  ///
+  /// Test whether the point [x],[y]
+  /// is inside this component's bounding box
   @override
   bool isInBoundingBox(double x, double y) {
     return super.isInBoundingBox(x, y);
   }
 
-  ///
-  /// @return The current size of this component's content + its margins
-  ///
+  /// The current size of this component's content + its margins
   Size get fullSize {
     final margins = this.margins.value;
     return Size(width + margins.horizontal, height + margins.vertical);
@@ -531,13 +450,13 @@ extension Configure<C extends Component> on C {
 abstract class ParentComponent extends Component {
   List<void Function()>? _taskQueue;
 
-  /// @return How this component vertically arranges its children
+  /// How this component vertically arranges its children
   final Observable<VerticalAlignment> verticalAlignment = Observable.create(VerticalAlignment.top);
 
-  /// @return How this component horizontally arranges its children
+  /// How this component horizontally arranges its children
   final Observable<HorizontalAlignment> horizontalAlignment = Observable.create(HorizontalAlignment.left);
 
-  /// @return The internal padding of this component
+  /// The internal padding of this component
   final AnimatableProperty<Insets> padding = AnimatableProperty.create(Insets.zero);
 
   /// Whether this component allows its
@@ -554,7 +473,7 @@ abstract class ParentComponent extends Component {
   }
 
   /// Recalculate the layout of this component
-  void layout(BuildContext context);
+  void layout(LayoutContext context);
 
   /// Queue [task] to be run after the
   /// entire UI has finished updating
@@ -567,7 +486,7 @@ abstract class ParentComponent extends Component {
   }
 
   @override
-  void draw(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta) {
+  void draw(DrawContext context, int mouseX, int mouseY, double delta) {
     surface(context, this);
   }
 
@@ -601,9 +520,9 @@ abstract class ParentComponent extends Component {
   }
 
   @override
-  void inflate(BuildContext context) {
-    if (_buildContext == context && !_dirty) return;
-    _buildContext = context;
+  void inflate(LayoutContext context) {
+    if (_layoutContext == context && !_dirty) return;
+    _layoutContext = context;
 
     for (var child in children) {
       child.dismount(DismountReason.layoutInflation);
@@ -630,7 +549,7 @@ abstract class ParentComponent extends Component {
     var previousSize = fullSize;
 
     _dirty = true;
-    inflate(_buildContext!);
+    inflate(_layoutContext!);
 
     if (previousSize != fullSize && hasParent) {
       parent!.onChildMutated(this);
@@ -664,8 +583,9 @@ abstract class ParentComponent extends Component {
 
   @override
   bool onMouseDown(double mouseX, double mouseY, int button) {
-    var iter = children.reversed.iterator;
+    final eventResult = super.onMouseDown(mouseX, mouseY, button);
 
+    var iter = children.reversed.iterator;
     while (iter.moveNext()) {
       var child = iter.current;
       if (!child.isInBoundingBox(x + mouseX, y + mouseY)) continue;
@@ -674,13 +594,14 @@ abstract class ParentComponent extends Component {
       }
     }
 
-    return false;
+    return eventResult;
   }
 
   @override
   bool onMouseScroll(double mouseX, double mouseY, double amount) {
-    var iter = children.reversed.iterator;
+    final eventResult = super.onMouseScroll(mouseX, mouseY, amount);
 
+    var iter = children.reversed.iterator;
     while (iter.moveNext()) {
       var child = iter.current;
       if (!child.isInBoundingBox(x + mouseX, y + mouseY)) continue;
@@ -689,7 +610,7 @@ abstract class ParentComponent extends Component {
       }
     }
 
-    return false;
+    return eventResult;
   }
 
   // @Override
@@ -728,12 +649,8 @@ abstract class ParentComponent extends Component {
     return null;
   }
 
-  /// Get the most specific child at the given coordinates
-  ///
-  /// @param x The x-coordinate to query
-  /// @param y The y-coordinate to query
-  /// @return The most specific child at the given coordinates,
-  /// or {@code null} if there is none
+  /// Get the most specific child at [x],[y]
+  /// (including possibly this component itself)
   Component? childAt(int x, int y) {
     var iter = children.reversed.iterator;
 
@@ -751,15 +668,15 @@ abstract class ParentComponent extends Component {
     return isInBoundingBox(x.toDouble(), y.toDouble()) ? this : null;
   }
 
-  /// Collect the entire component hierarchy below
-  /// this component into [list]
-  void collectChildren(List<Component> into) {
-    into.add(this);
+  /// Collect the entire component hierarchy
+  /// below this component into [list]
+  void collectChildren(List<Component> list) {
+    list.add(this);
     for (var child in children) {
       if (child is ParentComponent) {
-        child.collectChildren(into);
+        child.collectChildren(list);
       } else {
-        into.add(child);
+        list.add(child);
       }
     }
   }
@@ -785,19 +702,18 @@ abstract class ParentComponent extends Component {
   }
 
   /// The offset from the origin of this component
-  /// at which children can start to be mounted. Accumulates
-  /// padding as well as padding from content sizing
+  /// at which children can start to be mounted
   @protected
   Size childMountingOffset() {
     var padding = this.padding.value;
     return Size(padding.left, padding.top);
   }
 
-  /// Inflate [child] into [space] and mount using [layoutFunc] if its
-  /// positioning is equal to [Positioning.layout], or according to its
-  /// intrinsic positioning otherwise
+  /// Inflate [child] into the space in [context] and mount using [layoutFunc]
+  /// if its positioning is equal to [Positioning.layout], or according to
+  /// its intrinsic positioning otherwise
   @protected
-  void mountChild(Component? child, BuildContext context, void Function(Component) layoutFunc) {
+  void mountChild(Component? child, LayoutContext context, void Function(Component) layoutFunc) {
     if (child == null) return;
 
     final positioning = child.positioning.value;
@@ -833,14 +749,11 @@ abstract class ParentComponent extends Component {
     }
   }
 
-  /// Draw the children of this component along with
+  /// Draw the components in [children] along with
   /// their focus outline and tooltip, optionally clipping
-  /// them if {@link #allowOverflow} is {@code false}
-  ///
-  /// @param children The list of children to draw
+  /// them if [allowOverflow] is `false`
   @protected
-  void drawChildren(
-      DrawContext context, int mouseX, int mouseY, double partialTicks, double delta, List<Component> children) {
+  void drawChildren(DrawContext context, int mouseX, int mouseY, double delta, List<Component> children) {
     // TODO: scissoring
     // if (!allowOverflow) {
     //     var padding = this.padding.value;
@@ -855,7 +768,7 @@ abstract class ParentComponent extends Component {
       // if (!ScissorStack.isVisible(child, matrices)) continue;
       // matrices.translate(0, 0, child.zIndex());
 
-      child.draw(context, mouseX, mouseY, partialTicks, delta);
+      child.draw(context, mouseX, mouseY, delta);
       // if (focusHandler.lastFocusSource() == FocusSource.KEYBOARD_CYCLE && focusHandler.focused() == child) {
       //     child.drawFocusHighlight(matrices, mouseX, mouseY, partialTicks, delta);
       // }
@@ -868,41 +781,41 @@ abstract class ParentComponent extends Component {
     // }
   }
 
-  /// Calculate the space for child inflation. If a given axis
-  /// is content-sized, return the respective value from {@code thisSpace}
-  ///
-  /// @param thisSpace The space for layout inflation of this widget
-  /// @return The available space for child inflation
+  /// Create the build context for children of this component.
+  /// If a given axis on this component is content-sized, use the
+  /// space from this component's context for the child
   @protected
-  BuildContext get childContext {
+  LayoutContext get childContext {
     final padding = this.padding.value;
 
-    return _buildContext!.copy(
+    return _layoutContext!.copy(
       space: Size(
-        horizontalSizing.value.isContent ? _buildContext!.space.width - padding.horizontal : width - padding.horizontal,
-        verticalSizing.value.isContent ? _buildContext!.space.height - padding.vertical : height - padding.vertical,
+        horizontalSizing.value.isContent
+            ? _layoutContext!.space.width - padding.horizontal
+            : width - padding.horizontal,
+        verticalSizing.value.isContent ? _layoutContext!.space.height - padding.vertical : height - padding.vertical,
       ),
     );
   }
 }
 
-class BuildContext {
+class LayoutContext {
   final Window window;
   final TextRenderer textRenderer;
   final Size space;
 
-  BuildContext(this.window, this.textRenderer, this.space);
-  BuildContext.ofWindow(this.window, this.textRenderer) : space = Size(window.width, window.height);
+  LayoutContext(this.window, this.textRenderer, this.space);
+  LayoutContext.ofWindow(this.window, this.textRenderer) : space = Size(window.width, window.height);
 
-  BuildContext copy({Window? window, TextRenderer? textRenderer, Size? space}) =>
-      BuildContext(window ?? this.window, textRenderer ?? this.textRenderer, space ?? this.space);
+  LayoutContext copy({Window? window, TextRenderer? textRenderer, Size? space}) =>
+      LayoutContext(window ?? this.window, textRenderer ?? this.textRenderer, space ?? this.space);
 
   @override
   int get hashCode => Object.hash(window, textRenderer, space);
 
   @override
   bool operator ==(Object other) =>
-      other is BuildContext && other.window == window && other.textRenderer == textRenderer && other.space == space;
+      other is LayoutContext && other.window == window && other.textRenderer == textRenderer && other.space == space;
 }
 
 enum VerticalAlignment {
@@ -960,11 +873,11 @@ enum FocusSource {
 }
 
 enum DismountReason {
-  /// The child has been dismounted because the parent's layout
-  /// is being inflated
+  /// The child has been dismounted because the
+  /// parent's layout is being inflated
   layoutInflation,
 
-  /// The child has been dismounted because it has been removed
-  /// from its parent
+  /// The child has been dismounted because it has
+  /// been removed from its parent
   removed
 }

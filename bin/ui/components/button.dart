@@ -18,13 +18,13 @@ class Button extends Component {
   }
 
   @override
-  int determineHorizontalContentSize(Sizing sizing) => buildContext!.textRenderer.sizeOf(text).width + 30;
+  int determineHorizontalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text).width + 30;
 
   @override
-  int determineVerticalContentSize(Sizing sizing) => buildContext!.textRenderer.sizeOf(text).height + 30;
+  int determineVerticalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text).height + 30;
 
   @override
-  void draw(DrawContext context, int mouseX, int mouseY, double partialTicks, double delta) {
+  void draw(DrawContext context, int mouseX, int mouseY, double delta) {
     if (isInBoundingBox(mouseX.toDouble(), mouseY.toDouble())) {
       _hoverTime += computeDelta(_hoverTime, 1, delta * 10);
     } else {
