@@ -1,7 +1,7 @@
-import 'dart:ffi';
+import 'dart:ffi' as ffi;
 import 'dart:io';
 
-import 'package:ffi/ffi.dart';
+import 'package:ffi/ffi.dart' as ffi;
 import 'package:glfw/glfw.dart';
 import 'package:logging/logging.dart';
 import 'package:opengl/opengl.dart';
@@ -10,15 +10,20 @@ import 'package:vector_math/vector_math.dart';
 import 'color.dart';
 import 'gl/debug.dart';
 import 'gl/shader.dart';
-import 'gl/vertex_buffer.dart';
-import 'gl/vertex_descriptor.dart';
 import 'primitive_renderer.dart';
 import 'render_context.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
+import 'ui/component.dart';
+import 'ui/components/button.dart';
+import 'ui/containers/flow_layout.dart';
+import 'ui/insets.dart';
+import 'ui/inspector.dart';
+import 'ui/math.dart';
+import 'ui/sizing.dart';
 import 'window.dart';
 
-typedef GLFWerrorfun = Void Function(Int32, Pointer<Utf8>);
+typedef GLFWerrorfun = ffi.Void Function(ffi.Int32, ffi.Pointer<ffi.Utf8>);
 
 bool _running = true;
 
@@ -33,16 +38,16 @@ void main(List<String> args) {
     print("[${event.loggerName}] (${event.level.toString().toLowerCase()}) ${event.message}");
   });
 
-  DynamicLibrary.open("resources/lib/libglfw.so.3");
+  ffi.DynamicLibrary.open("resources/lib/libglfw.so.3");
 
   if (glfwInit() != GLFW_TRUE) {
     _logger.severe("GLFW init failed");
     exit(-1);
   }
 
-  glfwSetErrorCallback(Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
+  glfwSetErrorCallback(ffi.Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
 
-  _window = Window(800, 400, "this is cursed", debug: true);
+  _window = Window(800, 450, "this is cursed", debug: true);
 
   glfwMakeContextCurrent(_window.handle);
   attachGlErrorCallback();
@@ -67,6 +72,11 @@ void main(List<String> args) {
     GlShader.fragment(File("resources/shader/rounded.frag")),
   ]);
 
+  final roundedOutlineProgram = GlProgram("rounded_rect_outline", [
+    GlShader.vertex(File("resources/shader/position.vert")),
+    GlShader.fragment(File("resources/shader/rounded_outline.frag")),
+  ]);
+
   final circleProgram = GlProgram("circle", [
     GlShader.vertex(File("resources/shader/position.vert")),
     GlShader.fragment(File("resources/shader/circle.frag")),
@@ -84,38 +94,23 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final renderContext = RenderContext(_window, [
-    hsvProgram,
-    posColorProgram,
-    textProgram,
-    roundedProgram,
-    circleProgram,
-    blurProgram,
-  ]);
-
-  final triangle = VertexRenderObject(posColorVertexDescriptor, posColorProgram);
-  final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
-
-  final font = FontFamily("CascadiaCode", 36);
-  _nextCursor();
+  final font = FontFamily("Nunito", 30);
+  final cascadia = FontFamily("CascadiaCode", 20);
 
   _window.onKey.where((event) => event.action == GLFW_PRESS).map((event) => event.key).listen((key) {
     if (key == GLFW_KEY_ESCAPE) _running = false;
     if (key == GLFW_KEY_F11) _window.toggleFullscreen();
-    if (key == GLFW_KEY_SPACE) _nextCursor();
+  });
+
+  bool inspector = false;
+  _window.onKey.where((event) => event.action == GLFW_PRESS).listen((event) {
+    if (event.key != GLFW_KEY_LEFT_SHIFT || (event.mods & GLFW_MOD_CONTROL) == 0) return;
+    inspector = !inspector;
   });
 
   _window.onChar.map(String.fromCharCode).listen((char) {
     _logger.info("got char: $char");
   });
-
-  final notSoGood = Text([
-    StyledString("now, that's "),
-    StyledString("some pretty ", style: TextStyle(bold: true)),
-    StyledString("epic ", style: TextStyle(italic: true, color: Color.ofHsv(220 / 360, .65, 1))),
-    StyledString("text", style: TextStyle(bold: true, italic: true)),
-  ])
-    ..shape(font);
 
   double lastTime = glfwGetTime();
   int frames = 0;
@@ -123,43 +118,66 @@ void main(List<String> args) {
   double passedTime = 0;
   glfwSwapInterval(0);
 
-  double triX = -100;
-  double triY = -100;
+  final layout = FlowLayout.horizontal()
+    ..addChild(
+        Button(Text.string("Button", style: TextStyle(bold: true))..shape(font), (p0) => _logger.info("button 1"))
+          ..horizontalSizing(Sizing.fixed(150))
+          ..verticalSizing(Sizing.fixed(60))
+          ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
+          ..id = "Button 1")
+    ..addChild(
+        Button(Text.string("Button 2", style: TextStyle(bold: true))..shape(font), (p0) => _logger.info("button 2"))
+          ..horizontalSizing(Sizing.fixed(150))
+          ..verticalSizing(Sizing.fixed(60))
+          ..margins(Insets(top: 100, left: 15))
+          ..id = "Button 2")
+    ..inflate(Size(_window.width, _window.height))
+    ..mount(null, 0, 0);
+
+  _window.onMouseButton.where((event) => event.action == GLFW_PRESS).listen((event) {
+    layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
+  });
+
+  final renderContext = RenderContext(_window, [
+    hsvProgram,
+    posColorProgram,
+    textProgram,
+    roundedProgram,
+    roundedOutlineProgram,
+    circleProgram,
+    blurProgram,
+  ]);
+
+  final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
-    glClearColor(0, 0, 0, 0);
+    glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
     glEnable(GL_BLEND);
 
-    final hue = (lastTime / 5) % 1;
     final delta = glfwGetTime() - lastTime;
     lastTime = glfwGetTime();
 
-    triX += (_window.cursorX - triX - 100) * delta * 7.5;
-    triY += (_window.cursorY - triY - 100) * delta * 7.5;
+    drawText(
+        5, 5, 1, Text.string("$lastFps FPS")..shape(cascadia), textProgram, projection, Color.black.asVector().rgb);
 
-    posColorProgram
-      ..use()
-      ..uniformMat4("uTransform", Matrix4.translation(Vector3(triX, triY, 0)))
-      ..uniformMat4("uProjection", projection);
+    final drawContext = DrawContext(renderContext, primitiveRenderer, projection, font);
 
-    triangle.clear();
-    primitiveRenderer.buildTri(triangle.vertex, 0, 0, 200, 200, Color.green);
-    triangle
-      ..upload(dynamic: true)
-      ..draw();
+    layout.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
+    layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), 0, delta);
 
-    drawText(50, 100, .75, notSoGood, textProgram, projection, Vector3.all(1));
-    drawText(2, 0, .5, Text.string("$lastFps FPS")..shape(font), textProgram, projection, Vector3.all(1));
+    if (inspector) {
+      Inspector.drawInspector(drawContext, layout, _window.cursorX, _window.cursorY, true);
+    }
 
-    primitiveRenderer.roundedRect(150, 150, 100, 100, 15, Color.green, projection);
-    primitiveRenderer.circle(600, 150, 75, Color.blue, projection);
+    _cursor(layout.childAt(_window.cursorX.toInt(), _window.cursorY.toInt())?.cursorStyle ?? CursorStyle.none);
 
-    primitiveRenderer.blur(200, 100, _window.width - 400, _window.height - 200, Color.rgb(.5, .5, .8), projection);
+    // primitiveRenderer.blur(200, 100, _window.width - 400, _window.height - 200, Color.rgb(.5, .5, .8), projection);
 
     _window.nextFrame();
 
     if (passedTime >= 1) {
-      _logger.fine("${lastFps = frames} FPS");
+      lastFps = frames;
+      // _logger.fine("${lastFps} FPS");
 
       frames = 0;
       passedTime = 0;
@@ -172,41 +190,37 @@ void main(List<String> args) {
   glfwTerminate();
 }
 
-void onGlfwError(int errorCode, Pointer<Utf8> description) {
+void onGlfwError(int errorCode, ffi.Pointer<ffi.Utf8> description) {
   _glfwLogger.severe("GLFW Error: ${description.toDartString()} ($errorCode)");
 }
 
 extension CString on String {
-  T withAsNative<T>(T Function(Pointer<Utf8>) action) {
+  T withAsNative<T>(T Function(ffi.Pointer<ffi.Utf8>) action) {
     final pointer = toNativeUtf8();
     final result = action(pointer);
-    malloc.free(pointer);
+    ffi.malloc.free(pointer);
 
     return result;
   }
 }
 
-int _nextCursorIndex = -1;
-const _allCursors = [
-  GLFW_ARROW_CURSOR,
-  GLFW_IBEAM_CURSOR,
-  GLFW_CROSSHAIR_CURSOR,
-  GLFW_HAND_CURSOR,
-  GLFW_HRESIZE_CURSOR,
-  GLFW_VRESIZE_CURSOR
-];
+CursorStyle _currentCursorStyle = CursorStyle.none;
+ffi.Pointer<GLFWcursor>? _currentCursor;
 
-Pointer<GLFWcursor>? _currentCursor;
+void _cursor(CursorStyle style) {
+  if (_currentCursorStyle == style) return;
+  _currentCursorStyle = style;
 
-void _nextCursor() {
-  if (_currentCursor != null) {
-    glfwDestroyCursor(_currentCursor!);
+  final lastCursor = _currentCursor;
+
+  if (style != CursorStyle.none) {
+    _currentCursor = glfwCreateStandardCursor(style.glfw);
+    glfwSetCursor(_window.handle, _currentCursor!);
+  } else {
+    _currentCursor = null;
   }
 
-  _nextCursorIndex = (_nextCursorIndex + 1) % _allCursors.length;
-  _currentCursor = glfwCreateStandardCursor(_allCursors[_nextCursorIndex]);
-
-  glfwSetCursor(_window.handle, _currentCursor!);
+  if (lastCursor != null) glfwDestroyCursor(lastCursor);
 }
 
 String actionString(int action) {

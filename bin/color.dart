@@ -1,6 +1,9 @@
 import 'package:vector_math/vector_math.dart';
 
-class Color {
+import 'ui/animation.dart';
+import 'ui/math.dart';
+
+class Color implements Animatable<Color> {
   final Vector4 _storage;
 
   static final Color black = Color.ofRgb(0);
@@ -57,13 +60,13 @@ class Color {
     return alpha ? argb.toRadixString(16).padLeft(8, "0") : rgb.toRadixString(16).padLeft(6, "0");
   }
 
-  // @Override
-  // public Color interpolate(Color next, float delta) {
-  //     return new Color(
-  //             MathHelper.lerp(delta, this.red, next.red),
-  //             MathHelper.lerp(delta, this.green, next.green),
-  //             MathHelper.lerp(delta, this.blue, next.blue),
-  //             MathHelper.lerp(delta, this.alpha, next.alpha)
-  //     );
-  // }
+  @override
+  Color interpolate(Color next, double delta) {
+    return Color.rgb(
+      r.lerp(delta, next.r),
+      g.lerp(delta, next.g),
+      b.lerp(delta, next.b),
+      a.lerp(delta, next.a),
+    );
+  }
 }
