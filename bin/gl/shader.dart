@@ -51,6 +51,12 @@ class GlProgram {
   final String name;
   final Map<String, int> _uniformCache = {};
 
+  GlProgram.vertexFragment(String name, String vertex, String fragment)
+      : this(name, [
+          GlShader.vertex(File("resources/shader/$vertex.vert")),
+          GlShader.fragment(File("resources/shader/$fragment.frag"))
+        ]);
+
   GlProgram(this.name, List<GlShader> shaders) : _id = glCreateProgram() {
     for (final shader in shaders) {
       glAttachShader(_id, shader.id);

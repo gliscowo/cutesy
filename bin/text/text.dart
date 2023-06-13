@@ -88,6 +88,7 @@ class Text {
             glyphPos[i].y_advance.toDouble(),
           ),
           segment.style,
+          glyphInfo[i].cluster,
         ));
 
         cursorX += glyphPos[i].x_advance;
@@ -107,5 +108,6 @@ class ShapedGlyph {
   final Vector2 position;
   final Vector2 advance;
   final TextStyle style;
-  ShapedGlyph._(this.font, this.index, this.position, this.advance, this.style);
+  final int cluster;
+  ShapedGlyph._(this.font, this.index, this.position, this.advance, this.style, this.cluster);
 }

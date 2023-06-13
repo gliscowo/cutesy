@@ -17,6 +17,7 @@ import 'text/text_renderer.dart';
 import 'ui/component.dart';
 import 'ui/components/button.dart';
 import 'ui/components/label.dart';
+import 'ui/components/text_field.dart';
 import 'ui/containers/flow_layout.dart';
 import 'ui/insets.dart';
 import 'ui/inspector.dart';
@@ -48,45 +49,10 @@ void main(List<String> args) {
 
   glfwSetErrorCallback(ffi.Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
 
-  _window = Window(800, 450, "this is cursed", debug: true);
+  _window = Window(800, 450, "cutesy", debug: true);
 
   glfwMakeContextCurrent(_window.handle);
   attachGlErrorCallback();
-
-  final hsvProgram = GlProgram("hsv", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/hsv.frag")),
-  ]);
-
-  final posColorProgram = GlProgram("pos_color", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/position.frag")),
-  ]);
-
-  final textProgram = GlProgram("text", [
-    GlShader.vertex(File("resources/shader/text.vert")),
-    GlShader.fragment(File("resources/shader/text.frag")),
-  ]);
-
-  final roundedProgram = GlProgram("rounded_rect", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/rounded.frag")),
-  ]);
-
-  final roundedOutlineProgram = GlProgram("rounded_rect_outline", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/rounded_outline.frag")),
-  ]);
-
-  final circleProgram = GlProgram("circle", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/circle.frag")),
-  ]);
-
-  final blurProgram = GlProgram("blur", [
-    GlShader.vertex(File("resources/shader/position.vert")),
-    GlShader.fragment(File("resources/shader/blur.frag")),
-  ]);
 
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 
@@ -95,7 +61,7 @@ void main(List<String> args) {
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
-  final font = FontFamily("Nunito", 30);
+  final nunito = FontFamily("Nunito", 30);
   final cascadia = FontFamily("CascadiaCode", 20);
 
   _window.onKey.where((event) => event.action == GLFW_PRESS).map((event) => event.key).listen((key) {
@@ -120,25 +86,23 @@ void main(List<String> args) {
   glfwSwapInterval(0);
 
   final renderContext = RenderContext(_window, [
-    hsvProgram,
-    posColorProgram,
-    textProgram,
-    roundedProgram,
-    roundedOutlineProgram,
-    circleProgram,
-    blurProgram,
+    GlProgram.vertexFragment("hsv", "position", "hsv"),
+    GlProgram.vertexFragment("pos_color", "position", "position"),
+    GlProgram.vertexFragment("text", "text", "text"),
+    GlProgram.vertexFragment("rounded_rect", "position", "rounded"),
+    GlProgram.vertexFragment("rounded_rect_outline", "position", "rounded_outline"),
+    GlProgram.vertexFragment("circle", "position", "circle"),
+    GlProgram.vertexFragment("blur", "position", "blur"),
   ]);
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
-  final textRenderer = TextRenderer(renderContext, font, {"Nunito": font, "CascadiaCode": cascadia});
+  final textRenderer = TextRenderer(renderContext, nunito, {"Nunito": nunito, "CascadiaCode": cascadia});
 
   final layout = FlowLayout.vertical()
     ..addChild(FlowLayout.horizontal()
       ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
-        ..margins(Insets(top: 100, left: 100, right: 50, bottom: 25))
         ..id = "Button 1")
       ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) => _logger.info("button 2"))
-        ..margins(Insets(top: 100, left: 15))
         ..id = "Button 2")
       ..addChild(FlowLayout.vertical()
         ..addChild(Label(Text.string("AAA"))
@@ -147,7 +111,12 @@ void main(List<String> args) {
           ..horizontalTextAlignment = HorizontalAlignment.center
           ..scale = .75)
         ..addChild(Button(Text.string("hmmm"), (_) {})))
+      ..addChild(TextField()
+        ..id = "text-field"
+        ..verticalSizing(Sizing.fixed(50))
+        ..horizontalSizing(Sizing.fixed(250)))
       ..padding(Insets.all(10))
+      ..gap(5)
       ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)))
     ..horizontalAlignment(HorizontalAlignment.center)
     ..verticalAlignment(VerticalAlignment.center)
@@ -159,6 +128,14 @@ void main(List<String> args) {
     layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
   });
 
+  _window.onChar.listen((event) {
+    layout.childById<TextField>("text-field")!.onCharTyped(String.fromCharCode(event), 0);
+  });
+
+  _window.onKey.where((event) => event.action == GLFW_PRESS).listen((event) {
+    layout.childById<TextField>("text-field")!.onKeyPress(event.key, event.scancode, event.mods);
+  });
+
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -168,6 +145,13 @@ void main(List<String> args) {
     lastTime = glfwGetTime();
 
     textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
+        color: Color.black);
+
+    textRenderer.drawText(
+        5,
+        25,
+        Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
+        projection,
         color: Color.black);
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
@@ -231,12 +215,4 @@ void _cursor(CursorStyle style) {
   }
 
   if (lastCursor != null) glfwDestroyCursor(lastCursor);
-}
-
-String actionString(int action) {
-  if (action == GLFW_PRESS) return "PRESS";
-  if (action == GLFW_RELEASE) return "RELEASE";
-  if (action == GLFW_REPEAT) return "REPEAT";
-
-  return "UNKNOWN";
 }

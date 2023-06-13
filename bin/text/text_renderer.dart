@@ -218,6 +218,7 @@ class TextRenderer {
 
   Size sizeOf(Text text, {double scale = 1}) {
     if (!text.isShaped) text.shape(getFont);
+    if (text.glyphs.isEmpty) return Size.zero;
 
     int width = 0;
     for (var i = 0; i < text.glyphs.length - 1; i++) {
