@@ -47,30 +47,29 @@ class Text {
   void shape(FontLookup fontLookup) {
     int cursorX = 0, cursorY = 0;
 
+    final featureFlag = "calt on".toNativeUtf8().cast<Char>();
+    final language = "en".toNativeUtf8().cast<Char>();
+
     for (final segment in _segments) {
       final segmentFont = fontLookup(segment.style.fontFamily);
 
-      final featureFlag = "calt on".toNativeUtf8().cast<Char>();
-      final language = "en".toNativeUtf8().cast<Char>();
+      final hbFeatures = malloc<hb_feature>();
+      harfbuzz.feature_from_string(featureFlag, -1, hbFeatures);
 
-      final hbFeatures = malloc<hb_feature_t>();
-      harfbuzz.hb_feature_from_string(featureFlag, -1, hbFeatures);
-
-      final buffer = harfbuzz.hb_buffer_create();
+      final buffer = harfbuzz.buffer_create();
       String.fromCharCodes(logicalToVisual(segment.content))
-          .withAsNative((reordered) => harfbuzz.hb_buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
+          .withAsNative((reordered) => harfbuzz.buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
 
-      harfbuzz.hb_buffer_set_direction(buffer, hb_direction_t.HB_DIRECTION_LTR);
-      harfbuzz.hb_buffer_set_script(buffer, hb_script_t.HB_SCRIPT_LATIN);
-      harfbuzz.hb_buffer_set_language(buffer, harfbuzz.hb_language_from_string(language, -1));
-      harfbuzz.hb_buffer_set_cluster_level(
-          buffer, hb_buffer_cluster_level_t.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
-      harfbuzz.hb_shape(segmentFont.fontForStyle(segment.style).hbFont, buffer, hbFeatures, 1);
+      harfbuzz.buffer_set_direction(buffer, hb_direction.HB_DIRECTION_LTR);
+      harfbuzz.buffer_set_script(buffer, hb_script.HB_SCRIPT_LATIN);
+      harfbuzz.buffer_set_language(buffer, harfbuzz.language_from_string(language, -1));
+      harfbuzz.buffer_set_cluster_level(buffer, hb_buffer_cluster_level.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
+      harfbuzz.shape(segmentFont.fontForStyle(segment.style).hbFont, buffer, hbFeatures, 1);
       malloc.free(hbFeatures);
 
       final glpyhCount = malloc<UnsignedInt>();
-      final glyphInfo = harfbuzz.hb_buffer_get_glyph_infos(buffer, glpyhCount);
-      final glyphPos = harfbuzz.hb_buffer_get_glyph_positions(buffer, glpyhCount);
+      final glyphInfo = harfbuzz.buffer_get_glyph_infos(buffer, glpyhCount);
+      final glyphPos = harfbuzz.buffer_get_glyph_positions(buffer, glpyhCount);
 
       final glyphs = glpyhCount.value;
       malloc.free(glpyhCount);
@@ -95,7 +94,7 @@ class Text {
         cursorY += glyphPos[i].y_advance;
       }
 
-      harfbuzz.hb_buffer_destroy(buffer);
+      harfbuzz.buffer_destroy(buffer);
     }
 
     _isShaped = true;

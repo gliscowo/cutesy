@@ -8,7 +8,7 @@ import '../math.dart';
 import '../sizing.dart';
 import 'mounting_helper.dart';
 
-typedef _Algorithm = void Function(FlowLayout);
+typedef _LayoutFunc = void Function(FlowLayout);
 
 class FlowLayout extends ParentComponent {
   final List<Component> _children = [];
@@ -16,13 +16,13 @@ class FlowLayout extends ParentComponent {
 
   final Observable<int> gap = Observable.create(0);
 
-  final _Algorithm _algorithm;
+  final _LayoutFunc _algorithm;
   Size _contentSize = Size.zero;
 
   FlowLayout._(this._algorithm);
 
-  FlowLayout.vertical() : this._(_vertical);
-  FlowLayout.horizontal() : this._(_horizontal);
+  FlowLayout.vertical() : this._(_layoutVertical);
+  FlowLayout.horizontal() : this._(_layoutHorizontal);
 
   @override
   int determineHorizontalContentSize(Sizing sizing) => _contentSize.width + padding.value.horizontal;
@@ -105,8 +105,7 @@ class FlowLayout extends ParentComponent {
   //             : Containers.horizontalFlow(Sizing.content(), Sizing.content());
   // }
 
-  // ignore: prefer_function_declarations_over_variables
-  static final _Algorithm _horizontal = (container) {
+  static void _layoutHorizontal(FlowLayout container) {
     var layoutWidth = 0;
     var layoutHeight = 0;
 
@@ -151,10 +150,9 @@ class FlowLayout extends ParentComponent {
     }
 
     mountState.mountLate();
-  };
+  }
 
-  // ignore: prefer_function_declarations_over_variables
-  static final _Algorithm _vertical = (container) {
+  static void _layoutVertical(FlowLayout container) {
     var layoutHeight = 0;
     var layoutWidth = 0;
 
@@ -199,5 +197,5 @@ class FlowLayout extends ParentComponent {
     }
 
     mountState.mountLate();
-  };
+  }
 }

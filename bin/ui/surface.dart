@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_function_declarations_over_variables
-
 import '../color.dart';
 import '../context.dart';
 import 'component.dart';
@@ -7,10 +5,10 @@ import 'component.dart';
 typedef Surface = void Function(DrawContext, Component);
 
 class Surfaces {
-  static final Surface blank = (context, component) {};
+  static void blank(DrawContext context, Component component) {}
 
   static Surface flat(Color color) => (context, component) {
-        context.primitiveRenderer.rect(
+        context.primitives.rect(
           component.x.toDouble(),
           component.y.toDouble(),
           component.width.toDouble(),
@@ -21,7 +19,7 @@ class Surfaces {
       };
 
   static Surface outline(Color color, [int thickness = 2]) => (context, component) {
-        context.primitiveRenderer.roundedRect(
+        context.primitives.roundedRect(
           component.x.toDouble(),
           component.y.toDouble(),
           component.width.toDouble(),

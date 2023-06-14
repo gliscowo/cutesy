@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_function_declarations_over_variables
-
 import 'dart:math';
 
 import 'package:meta/meta.dart';
@@ -36,7 +34,7 @@ class Observable<T> {
   /// @param observer    The observer to notify
   /// @param observables The list of observable to observe
   ///
-  static void observeAll(void Function() observer, List<Observable> observables) {
+  static void observeAll(void Function() observer, List<Observable<dynamic>> observables) {
     for (var observable in observables) {
       observable.observe((_) => observer());
     }
@@ -133,23 +131,23 @@ typedef Easing = double Function(double);
 
 /// An easing function which can smoothly move
 /// an interpolation value from 0 to 1
-abstract class Easings {
-  static final Easing linear = (x) => x;
+abstract final class Easings {
+  static double linear(double x) => x;
 
-  static final Easing sine = (x) => sin(x * pi - pi / 2) * 0.5 + 0.5;
+  static double sine(double x) => sin(x * pi - pi / 2) * 0.5 + 0.5;
 
-  static final Easing quadratic = (x) => x < 0.5 ? 2 * x * x : (1 - pow(-2 * x + 2, 2) / 2);
+  static double quadratic(double x) => x < 0.5 ? 2 * x * x : (1 - pow(-2 * x + 2, 2) / 2);
 
-  static final Easing cubic = (x) => x < 0.5 ? 4 * x * x * x : (1 - pow(-2 * x + 2, 3) / 2);
+  static double cubic(double x) => x < 0.5 ? 4 * x * x * x : (1 - pow(-2 * x + 2, 3) / 2);
 
-  static final Easing quartic = (x) => x < 0.5 ? 8 * x * x * x * x : (1 - pow(-2 * x + 2, 4) / 2);
+  static double quartic(double x) => x < 0.5 ? 8 * x * x * x * x : (1 - pow(-2 * x + 2, 4) / 2);
 
-  static final Easing expo = (x) {
+  static double expo(double x) {
     if (x == 0) return 0;
     if (x == 1) return 1;
 
     return x < 0.5 ? pow(2, 20 * x - 10) / 2 : (2 - pow(2, -20 * x + 10)) / 2;
-  };
+  }
 }
 
 class Animation<A extends Animatable<A>> {

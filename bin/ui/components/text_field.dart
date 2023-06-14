@@ -15,7 +15,7 @@ class TextField extends Component {
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
-    context.primitiveRenderer.roundedRect(
+    context.primitives.roundedRect(
       x.toDouble(),
       y.toDouble(),
       width.toDouble(),
@@ -25,7 +25,7 @@ class TextField extends Component {
       context.projection,
     );
 
-    context.primitiveRenderer.roundedRect(
+    context.primitives.roundedRect(
       x.toDouble(),
       y.toDouble(),
       width.toDouble(),
@@ -39,7 +39,7 @@ class TextField extends Component {
     final renderText = Text.string(_content, style: TextStyle(fontFamily: "CascadiaCode"));
     final renderTextSize = context.textRenderer.sizeOf(renderText);
 
-    context.primitiveRenderer.roundedRect(
+    context.primitives.roundedRect(
       x.toDouble() + 5 + renderTextSize.width + _cursorOffset(renderText),
       y.toDouble() + 7,
       2,

@@ -1,5 +1,6 @@
 import 'dart:ffi' as ffi;
 import 'dart:io';
+import 'dart:math';
 
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:glfw/glfw.dart';
@@ -11,6 +12,8 @@ import 'color.dart';
 import 'context.dart';
 import 'gl/debug.dart';
 import 'gl/shader.dart';
+import 'gl/vertex_buffer.dart';
+import 'gl/vertex_descriptor.dart';
 import 'primitive_renderer.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
@@ -98,11 +101,15 @@ void main(List<String> args) {
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
   final textRenderer = TextRenderer(renderContext, nunito, {"Nunito": nunito, "CascadiaCode": cascadia});
 
+  var showGraph = false;
   final layout = FlowLayout.vertical()
     ..addChild(FlowLayout.horizontal()
       ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
         ..id = "Button 1")
-      ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) => _logger.info("button 2"))
+      ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) {
+        _logger.info("button 2");
+        showGraph = !showGraph;
+      })
         ..id = "Button 2")
       ..addChild(FlowLayout.vertical()
         ..addChild(Label(Text.string("AAA"))
@@ -136,6 +143,9 @@ void main(List<String> args) {
     layout.childById<TextField>("text-field")!.onKeyPress(event.key, event.scancode, event.mods);
   });
 
+  final frameMesh = MeshBuffer(posColorVertexDescriptor, renderContext.findProgram("pos_color"));
+  final fps = <int>[];
+
   while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
     glClearColor(1, 1, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -148,11 +158,12 @@ void main(List<String> args) {
         color: Color.black);
 
     textRenderer.drawText(
-        5,
-        25,
-        Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
-        projection,
-        color: Color.black);
+      5,
+      25,
+      Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
+      projection,
+      color: Color.black,
+    );
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
 
@@ -165,12 +176,27 @@ void main(List<String> args) {
 
     _cursor(layout.childAt(_window.cursorX.toInt(), _window.cursorY.toInt())?.cursorStyle ?? CursorStyle.none);
 
-    // primitiveRenderer.blur(200, 100, _window.width - 400, _window.height - 200, Color.rgb(.5, .5, .8), projection);
+    if (showGraph) {
+      frameMesh.clear();
+      primitiveRenderer.buildRect(frameMesh.vertex, 0, _window.height - 100, 200, 1, Color.black);
+      for (var (idx, measure) in fps.indexed) {
+        final height = (1000 / measure) * 100;
+        primitiveRenderer.buildRect(frameMesh.vertex, idx.toDouble() * 2, _window.height - height, 2, height,
+            Color.red.interpolate(Color.green, min(1, measure / 1000)));
+      }
+
+      frameMesh.program.use();
+      frameMesh
+        ..upload(dynamic: true)
+        ..draw();
+    }
 
     _window.nextFrame();
 
-    if (passedTime >= 1) {
-      lastFps = frames;
+    if (passedTime >= .1) {
+      fps.add(lastFps);
+      if (fps.length > 100) fps.removeAt(0);
+      lastFps = frames * 10;
       // _logger.fine("${lastFps} FPS");
 
       frames = 0;

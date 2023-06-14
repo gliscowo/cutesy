@@ -17,7 +17,7 @@ double computeDelta(double current, double target, double delta) {
   return delta.abs() > diff.abs() ? diff : delta;
 }
 
-abstract class Rectangle implements Animatable<Rectangle> {
+abstract mixin class Rectangle implements Animatable<Rectangle> {
   int get x;
   int get y;
 
@@ -68,6 +68,8 @@ class Size {
 
   final int width, height;
   const Size(this.width, this.height);
+
+  Size copy({int? width, int? height}) => Size(width ?? this.width, height ?? this.height);
 
   @override
   int get hashCode => Object.hash(width, height);

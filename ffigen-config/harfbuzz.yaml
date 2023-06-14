@@ -1,0 +1,50 @@
+output: '../bin/native/harfbuzz.dart'
+name: 'HarfbuzzLibrary'
+description: 'Generated bindings to the HarfBuzz text shaping library'
+llvm-path:
+  - '/usr/lib/llvm-15/lib/libclang.so.1'
+headers:
+  entry-points:
+    - '/usr/include/harfbuzz/hb.h'
+  include-directives:
+    - '**hb-buffer.h'
+    - '**hb-common.h'
+    - '**hb-blob.h'
+    - '**hb-face.h'
+    - '**hb-font.h'
+    - '**hb-shape.h'
+comments: false
+structs:
+  dependency-only: opaque
+  exclude: 
+    - '_+.*'
+  rename:
+    '(.*)_t': '$1'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+unions:
+  dependency-only: opaque
+  exclude: 
+    - '_+.*'
+  rename:
+    '(.*)_t': '$1'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+enums:
+  exclude: 
+    - '_+.*'
+  rename:
+    '(.*)_t': '$1'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+typedefs:
+  exclude: 
+    - '_+.*'
+  rename:
+    '(.*)_t': '$1'
+functions:
+  rename:
+    'hb_(.*)': '$1'

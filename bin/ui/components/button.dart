@@ -31,7 +31,7 @@ class Button extends Component {
       _hoverTime += computeDelta(_hoverTime, 0, delta * 10);
     }
 
-    context.primitiveRenderer.roundedRect(
+    context.primitives.roundedRect(
       x.toDouble(),
       y.toDouble(),
       width.toDouble(),

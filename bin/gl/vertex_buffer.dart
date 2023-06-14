@@ -9,7 +9,7 @@ import 'package:vector_math/vector_math.dart';
 import 'shader.dart';
 import 'vertex_descriptor.dart';
 
-class VertexRenderObject<VF extends Function> {
+class MeshBuffer<VF extends Function> {
   final GlVertexBuffer _vbo = GlVertexBuffer();
   final GlVertexArray _vao = GlVertexArray();
 
@@ -19,7 +19,7 @@ class VertexRenderObject<VF extends Function> {
   final GlProgram program;
   late final VF vertex;
 
-  VertexRenderObject(VertexDescriptor<VF> descriptor, this.program, {int initialBufferSize = 1024})
+  MeshBuffer(VertexDescriptor<VF> descriptor, this.program, {int initialBufferSize = 1024})
       : _descriptor = descriptor,
         _buffer = BufferBuilder(initialBufferSize) {
     _vbo.bind();

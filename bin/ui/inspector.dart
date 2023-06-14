@@ -20,14 +20,14 @@ abstract class Inspector {
   /// @param insets   The insets to draw around the rectangle
   /// @param color    The color to draw the inset area with
   static void drawInsets(DrawContext context, int x, int y, int width, int height, Insets insets, Color color) {
-    context.primitiveRenderer.rect(x.toDouble() - insets.left, y.toDouble() - insets.top,
-        width.toDouble() + insets.horizontal, insets.top.toDouble(), color, context.projection);
-    context.primitiveRenderer.rect(x.toDouble() - insets.left, y.toDouble() + height,
-        width.toDouble() + insets.horizontal, insets.bottom.toDouble(), color, context.projection);
+    context.primitives.rect(x.toDouble() - insets.left, y.toDouble() - insets.top, width.toDouble() + insets.horizontal,
+        insets.top.toDouble(), color, context.projection);
+    context.primitives.rect(x.toDouble() - insets.left, y.toDouble() + height, width.toDouble() + insets.horizontal,
+        insets.bottom.toDouble(), color, context.projection);
 
-    context.primitiveRenderer.rect(
+    context.primitives.rect(
         x.toDouble() - insets.left, y.toDouble(), insets.left.toDouble(), height.toDouble(), color, context.projection);
-    context.primitiveRenderer.rect(
+    context.primitives.rect(
         x.toDouble() + width, y.toDouble(), insets.right.toDouble(), height.toDouble(), color, context.projection);
   }
 
@@ -56,7 +56,7 @@ abstract class Inspector {
       final margins = child.margins.value;
       drawInsets(context, child.x, child.y, child.width, child.height, margins, Color.ofArgb(0xA7FFF338));
 
-      context.primitiveRenderer.roundedRect(child.x.toDouble(), child.y.toDouble(), child.width.toDouble(),
+      context.primitives.roundedRect(child.x.toDouble(), child.y.toDouble(), child.width.toDouble(),
           child.height.toDouble(), 5, Color.ofArgb(0xFF3AB0FF), context.projection,
           outlineThickness: 1);
 
@@ -88,9 +88,9 @@ abstract class Inspector {
         }
 
         int width = max(nameSize.width, descriptorSize.width);
-        context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
+        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection);
-        context.primitiveRenderer.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
+        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection,
             outlineThickness: 1);
 

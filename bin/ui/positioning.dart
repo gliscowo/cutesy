@@ -12,8 +12,8 @@ class Positioning implements Animatable<Positioning> {
   const Positioning.absolute(int xPixels, int yPixels) : this._(PositioningType.absolute, xPixels, yPixels);
   const Positioning.relative(int xPixels, int yPixels) : this._(PositioningType.absolute, xPixels, yPixels);
 
-  Positioning copy({PositioningType? newType, int? newX, int? newY}) =>
-      Positioning._(newType ?? type, newX ?? x, newY ?? y);
+  Positioning copy({PositioningType? type, int? x, int? y}) =>
+      Positioning._(type ?? this.type, x ?? this.x, y ?? this.y);
 
   bool get isLayout => type == PositioningType.layout;
 

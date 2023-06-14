@@ -19,6 +19,9 @@ class Insets implements Animatable<Insets> {
 
   Insets get inverted => Insets(top: -top, bottom: -bottom, left: -left, right: -right);
 
+  Insets copy({int? top, int? bottom, int? left, int? right}) =>
+      Insets(top: top ?? this.top, bottom: bottom ?? this.bottom, left: left ?? this.left, right: right ?? this.right);
+
   Insets operator +(Insets other) =>
       Insets(top: top + other.top, bottom: bottom + other.bottom, left: left + other.left, right: right + other.right);
 

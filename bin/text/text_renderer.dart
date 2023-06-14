@@ -17,8 +17,8 @@ import '../native/harfbuzz.dart';
 import '../ui/math.dart';
 import 'text.dart';
 
-final freetype = FreetypeLibrary(DynamicLibrary.open("resources/lib/libfreetype.so"));
-final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("resources/lib/libharfbuzz.so"));
+final freetype = FreetypeLibrary(DynamicLibrary.open("libfreetype.so"));
+final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("libharfbuzz.so"));
 
 final Logger _logger = Logger("cutesy.text_handler");
 
@@ -65,7 +65,7 @@ class Font {
   static int _nextGlyphX = 1024, _nextGlyphY = 1024;
   static int _currentRowHeight = 0;
 
-  late final Pointer<hb_font_t> _hbFont;
+  late final Pointer<hb_font> _hbFont;
   late final FT_Face _ftFace;
 
   final Map<int, Glyph> _glyphs = {};
@@ -77,7 +77,7 @@ class Font {
     final nativePath = path.toNativeUtf8().cast<Char>();
 
     final face = malloc<FT_Face>();
-    if (freetype.FT_New_Face(_ftLibrary, nativePath, 0, face) != 0) {
+    if (freetype.New_Face(_ftLibrary, nativePath, 0, face) != 0) {
       throw ArgumentError.value(path, "path", "Could not load font");
     }
 
@@ -86,12 +86,12 @@ class Font {
     italic = faceStruct.style_flags & FT_STYLE_FLAG_ITALIC != 0;
 
     _ftFace = face.value;
-    freetype.FT_Set_Pixel_Sizes(_ftFace, 0, size);
+    freetype.Set_Pixel_Sizes(_ftFace, 0, size);
 
-    final blob = harfbuzz.hb_blob_create_from_file(nativePath);
-    final hbFace = harfbuzz.hb_face_create(blob, 0);
-    _hbFont = harfbuzz.hb_font_create(hbFace);
-    harfbuzz.hb_font_set_scale(_hbFont, 64, 64);
+    final blob = harfbuzz.blob_create_from_file(nativePath);
+    final hbFace = harfbuzz.face_create(blob, 0);
+    _hbFont = harfbuzz.font_create(hbFace);
+    harfbuzz.font_set_scale(_hbFont, 64, 64);
 
     malloc.free(nativePath);
   }
@@ -99,14 +99,14 @@ class Font {
   Glyph operator [](int index) => _glyphs[index] ?? _loadGlyph(index);
 
   Glyph _loadGlyph(int index) {
-    if (freetype.FT_Load_Glyph(_ftFace, index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_COLOR) != 0) {
+    if (freetype.Load_Glyph(_ftFace, index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_COLOR) != 0) {
       throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
     }
 
     final width = _ftFace.ref.glyph.ref.bitmap.width ~/ 3;
     final pitch = _ftFace.ref.glyph.ref.bitmap.pitch;
     final height = _ftFace.ref.glyph.ref.bitmap.rows;
-    final location = _allocateGlyphPosition(width, height);
+    final (texture, u, v) = _allocateGlyphPosition(width, height);
 
     final glyphPixels = _ftFace.ref.glyph.ref.bitmap.buffer.cast<Uint8>().asTypedList(pitch * height);
     final pixelBuffer = malloc<Uint8>(width * height * 3);
@@ -122,12 +122,12 @@ class Font {
 
     glBindTexture(GL_TEXTURE_2D, _glyphTextures.first);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, location.u, location.v, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, u, v, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
 
     return _glyphs[index] = Glyph(
-      _glyphTextures.first,
-      location.u,
-      location.v,
+      texture,
+      u,
+      v,
       width,
       height,
       _ftFace.ref.glyph.ref.bitmap_left,
@@ -135,7 +135,7 @@ class Font {
     );
   }
 
-  static _GlyphLocation _allocateGlyphPosition(int width, int height) {
+  static (int, int, int) _allocateGlyphPosition(int width, int height) {
     if (_nextGlyphX + width >= 1024) {
       _nextGlyphX = 0;
       _nextGlyphY += _currentRowHeight + 1;
@@ -148,7 +148,7 @@ class Font {
     }
 
     final textureId = _glyphTextures.last;
-    final location = _GlyphLocation(textureId, _nextGlyphX, _nextGlyphY);
+    final location = (textureId, _nextGlyphX, _nextGlyphY);
 
     _nextGlyphX += width + 1;
     _currentRowHeight = max(_currentRowHeight, height);
@@ -175,23 +175,18 @@ class Font {
     return textureId;
   }
 
-  Pointer<hb_font_t> get hbFont => _hbFont;
+  Pointer<hb_font> get hbFont => _hbFont;
 
   static FT_Library get _ftLibrary {
     if (_ftInstance != null) return _ftInstance!;
 
     final ft = malloc<FT_Library>();
-    if (freetype.FT_Init_FreeType(ft) != 0) {
+    if (freetype.Init_FreeType(ft) != 0) {
       throw "Failed to initialize FreeType library";
     }
 
     return _ftInstance = ft.value;
   }
-}
-
-class _GlyphLocation {
-  final int textureId, u, v;
-  _GlyphLocation(this.textureId, this.u, this.v);
 }
 
 class Glyph {
@@ -203,7 +198,7 @@ class Glyph {
 }
 
 class TextRenderer {
-  final _cachedRenderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
+  final _cachedRenderObjects = <int, MeshBuffer<TextVertexFunction>>{};
   final GlProgram _program;
 
   final FontFamily _defaultFont;
@@ -241,11 +236,11 @@ class TextRenderer {
       ..use()
       ..uniformMat4("uProjection", projection);
 
-    final renderObjects = <int, VertexRenderObject<TextVertexFunction>>{};
-    VertexRenderObject<TextVertexFunction> renderObject(int texture) {
+    final renderObjects = <int, MeshBuffer<TextVertexFunction>>{};
+    MeshBuffer<TextVertexFunction> renderObject(int texture) {
       return renderObjects[texture] ??
           (renderObjects[texture] = (_cachedRenderObjects[texture]?..clear()) ??
-              (_cachedRenderObjects[texture] = VertexRenderObject(textVertexDescriptor, _program)));
+              (_cachedRenderObjects[texture] = MeshBuffer(textVertexDescriptor, _program)));
     }
 
     final textHeight = sizeOf(text).height;
@@ -273,9 +268,9 @@ class TextRenderer {
     glActiveTexture(GL_TEXTURE0);
     glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
 
-    renderObjects.forEach((texture, vro) {
+    renderObjects.forEach((texture, mesh) {
       glBindTexture(GL_TEXTURE_2D, texture);
-      vro
+      mesh
         ..upload(dynamic: true)
         ..draw();
     });

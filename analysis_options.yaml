@@ -22,6 +22,11 @@ include: package:lints/recommended.yaml
 analyzer:
   errors: 
     invalid_use_of_protected_member: error
+    strict_raw_type: error
+  language: 
+    strict-raw-types: true
+    strict-inference: true
+    strict-casts: true
 
 # For more information about the core and recommended set of lints, see
 # https://dart.dev/go/core-lints

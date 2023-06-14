@@ -31,11 +31,11 @@ class RenderContext {
 
 class DrawContext {
   final RenderContext renderContext;
-  final ImmediatePrimitiveRenderer primitiveRenderer;
+  final ImmediatePrimitiveRenderer primitives;
 
   final Matrix4 projection;
 
   final TextRenderer textRenderer;
 
-  DrawContext(this.renderContext, this.primitiveRenderer, this.projection, this.textRenderer);
+  DrawContext(this.renderContext, this.primitives, this.projection, this.textRenderer);
 }

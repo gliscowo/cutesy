@@ -65,7 +65,7 @@ abstract class Component with Rectangle {
   /// Draw something which clearly indicates
   /// that this component is currently focused
   void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double delta) {
-    context.primitiveRenderer.roundedRect(
+    context.primitives.roundedRect(
       x.toDouble(),
       y.toDouble(),
       width.toDouble(),

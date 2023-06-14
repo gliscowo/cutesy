@@ -1,0 +1,39 @@
+output: '../bin/native/freetype.dart'
+name: 'FreetypeLibrary'
+description: 'Generated bindings to the FreeType font handling library'
+compiler-opts:
+  - '-I/usr/include/freetype2/'
+llvm-path:
+  - '/usr/lib/llvm-15/lib/libclang.so.1'
+headers:
+  entry-points:
+    - '/usr/include/freetype2/freetype/freetype.h'
+  include-directives:
+    - '**/freetype/**'
+comments: false
+structs:
+  dependency-only: opaque
+  exclude:
+    - '_+.*'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+unions:
+  dependency-only: opaque
+  exclude:
+    - '_+.*'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+enums:
+  exclude:
+    - '_+.*'
+  member-rename:
+    '.*':
+      '_+(.*)': '$1'
+typedefs:
+  exclude:
+    - '_+.*'
+functions:
+  rename:
+    'FT_(.*)': '$1'
