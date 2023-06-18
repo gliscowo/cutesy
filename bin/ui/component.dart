@@ -211,7 +211,7 @@ abstract class Component with Rectangle {
   ///
   /// **Mouse coordinates are relative to the component**
   bool onMouseDown(double mouseX, double mouseY, int button) =>
-      _mouseDownEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
+      _mouseDownEvents.dispatch((mouseX: mouseX, mouseY: mouseY, button: button));
 
   final EventStream<MouseButtonEvent, bool> _mouseDownEvents = EventStream.withBoolResult();
   EventSource<MouseButtonEvent, bool> get mouseDown => _mouseDownEvents.source;
@@ -221,7 +221,7 @@ abstract class Component with Rectangle {
   ///
   /// **Mouse coordinates are relative to the component**
   bool onMouseUp(double mouseX, double mouseY, int button) =>
-      _mouseUpEvents.dispatch(MouseButtonEvent(mouseX, mouseY, button));
+      _mouseUpEvents.dispatch((mouseX: mouseX, mouseY: mouseY, button: button));
 
   final EventStream<MouseButtonEvent, bool> _mouseUpEvents = EventStream.withBoolResult();
   EventSource<MouseButtonEvent, bool> get mouseUp => _mouseUpEvents.source;
@@ -231,7 +231,7 @@ abstract class Component with Rectangle {
   ///
   /// **Mouse coordinates are relative to the component**
   bool onMouseScroll(double mouseX, double mouseY, double amount) =>
-      _mouseScrollEvents.dispatch(MouseScrollEvent(mouseX, mouseY, amount));
+      _mouseScrollEvents.dispatch((mouseX: mouseX, mouseY: mouseY, amount: amount));
 
   final EventStream<MouseScrollEvent, bool> _mouseScrollEvents = EventStream.withBoolResult();
   EventSource<MouseScrollEvent, bool> get mouseScroll => _mouseScrollEvents.source;
@@ -242,7 +242,7 @@ abstract class Component with Rectangle {
   ///
   /// **Mouse coordinates are relative to the component**
   bool onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) =>
-      _mouseDragEvents.dispatch(MouseDragEvent(mouseX, mouseY, deltaX, deltaY, button));
+      _mouseDragEvents.dispatch((mouseX: mouseX, mouseY: mouseY, deltaX: deltaX, deltaY: deltaY, button: button));
 
   final EventStream<MouseDragEvent, bool> _mouseDragEvents = EventStream.withBoolResult();
   EventSource<MouseDragEvent, bool> get mouseDrag => _mouseDragEvents.source;
@@ -256,7 +256,7 @@ abstract class Component with Rectangle {
   /// - [modifiers] is a bitfield describing which modifier keys were held,
   ///    refer to <a href="https://www.glfw.org/docs/3.3/group__mods.html">GLFW Modifier key flags</a>
   bool onKeyPress(int keyCode, int scanCode, int modifiers) =>
-      _keyPressEvents.dispatch(KeyPressEvent(keyCode, scanCode, modifiers));
+      _keyPressEvents.dispatch((keyCode: keyCode, scanCode: scanCode, modifiers: modifiers));
 
   final EventStream<KeyPressEvent, bool> _keyPressEvents = EventStream.withBoolResult();
   EventSource<KeyPressEvent, bool> get keyPress => _keyPressEvents.source;
@@ -264,7 +264,7 @@ abstract class Component with Rectangle {
   /// Called when a keyboard input event occurred - namely when
   /// a key has been pressed and the OS determined it should result
   /// in [chr] being typed
-  bool onCharTyped(String chr, int modifiers) => _charTypedEvents.dispatch(CharTypedEvent(chr, modifiers));
+  bool onCharTyped(String chr, int modifiers) => _charTypedEvents.dispatch((chr: chr, modifiers: modifiers));
 
   final EventStream<CharTypedEvent, bool> _charTypedEvents = EventStream.withBoolResult();
   EventSource<CharTypedEvent, bool> get charTyped => _charTypedEvents.source;

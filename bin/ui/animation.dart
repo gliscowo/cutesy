@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:meta/meta.dart';
 
-abstract class Animatable<A extends Animatable<A>> {
+abstract interface class Animatable<A extends Animatable<A>> {
   A interpolate(A next, double delta);
 }
 

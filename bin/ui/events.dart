@@ -41,30 +41,8 @@ class EventSubscription<E, R> {
 
 // Default event classes
 
-class CharTypedEvent {
-  final String chr;
-  final int modifiers;
-  CharTypedEvent(this.chr, this.modifiers);
-}
-
-class MouseButtonEvent {
-  final double mouseX, mouseY;
-  final int button;
-  MouseButtonEvent(this.mouseX, this.mouseY, this.button);
-}
-
-class MouseScrollEvent {
-  final double mouseX, mouseY, amount;
-  MouseScrollEvent(this.mouseX, this.mouseY, this.amount);
-}
-
-class MouseDragEvent {
-  final double mouseX, mouseY, deltaX, deltaY;
-  final int button;
-  MouseDragEvent(this.mouseX, this.mouseY, this.deltaX, this.deltaY, this.button);
-}
-
-class KeyPressEvent {
-  final int keyCode, scanCode, modifiers;
-  KeyPressEvent(this.keyCode, this.scanCode, this.modifiers);
-}
+typedef CharTypedEvent = ({String chr, int modifiers});
+typedef MouseButtonEvent = ({double mouseX, double mouseY, int button});
+typedef MouseScrollEvent = ({double mouseX, double mouseY, double amount});
+typedef MouseDragEvent = ({double mouseX, double mouseY, double deltaX, double deltaY, int button});
+typedef KeyPressEvent = ({int keyCode, int scanCode, int modifiers});
