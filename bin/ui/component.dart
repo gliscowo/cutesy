@@ -1,4 +1,4 @@
-import 'package:glfw/glfw.dart';
+import 'package:dart_glfw/dart_glfw.dart';
 import 'package:meta/meta.dart';
 
 import '../color.dart';
@@ -854,9 +854,9 @@ enum HorizontalAlignment {
 
 enum CursorStyle {
   none(0),
-  pointer(GLFW_ARROW_CURSOR),
-  text(GLFW_IBEAM_CURSOR),
-  hand(GLFW_HAND_CURSOR),
+  pointer(glfwArrowCursor),
+  text(glfwIbeamCursor),
+  hand(glfwHandCursor),
   move(0x36009);
 
   final int glfw;

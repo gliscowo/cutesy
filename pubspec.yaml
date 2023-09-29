@@ -1,24 +1,28 @@
 name: cutesy
-description: A sample command-line application.
-version: 1.0.0
+description: A mistake
+version: 0.1.0
+publish_to: none
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
 
-dev_dependencies:
-  ffigen: ^6.0.0
-  lints: ^2.0.0
-  test: ^1.16.0
 dependencies:
   bidi: ^2.0.6
-  ffi: ^1.2.1
-  glfw: ^0.5.0
+  ffi: ^2.1.0
+  dart_glfw: 
+    git:
+      url: 'https://github.com/gliscowo/dart_glfw.git'
+      ref: e7b3814
+  dart_opengl:
+    git:
+      url: 'https://github.com/gliscowo/dart_opengl.git'
+      ref: 9fad60e
   logging: ^1.1.0
   meta: ^1.9.0
-  opengl: ^0.6.0
   path: ^1.8.3
   vector_math: ^2.1.4
 
-dependency_overrides:
-  ffi: ^2.0.2
-  ffigen: ^8.0.2
+dev_dependencies:
+  ffigen: ^9.0.1
+  lints: ^2.0.0
+  test: ^1.16.0

@@ -1,11 +1,12 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
-import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../cutesy.dart';
 import 'shader.dart';
 import 'vertex_descriptor.dart';
 
@@ -56,18 +57,18 @@ class GlVertexBuffer {
   int _vboSize = 0;
 
   GlVertexBuffer() {
-    final idPointer = malloc<Uint32>();
-    glGenBuffers(1, idPointer);
+    final idPointer = malloc<UnsignedInt>();
+    gl.genBuffers(1, idPointer);
     _id = idPointer.value;
     malloc.free(idPointer);
   }
 
   void bind() {
-    glBindBuffer(GL_ARRAY_BUFFER, _id);
+    gl.bindBuffer(glArrayBuffer, _id);
   }
 
   void unbind() {
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    gl.bindBuffer(glArrayBuffer, 0);
   }
 
   void upload(BufferBuilder data, {bool dynamic = false}) {
@@ -76,24 +77,24 @@ class GlVertexBuffer {
     final buffer = malloc<Uint8>(data._cursor);
     buffer.asTypedList(data._cursor).setRange(0, data._cursor, bytes);
 
-    glBindBuffer(GL_ARRAY_BUFFER, _id);
+    gl.bindBuffer(glArrayBuffer, _id);
 
     if (data._cursor > _vboSize) {
-      glBufferData(GL_ARRAY_BUFFER, data._cursor, buffer, dynamic ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW);
+      gl.bufferData(glArrayBuffer, data._cursor, buffer.cast(), dynamic ? glDynamicDraw : glStaticDraw);
       _vboSize = data._cursor;
     } else {
-      glBufferSubData(GL_ARRAY_BUFFER, 0, data._cursor, buffer);
+      gl.bufferSubData(glArrayBuffer, 0, data._cursor, buffer.cast());
     }
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    gl.bindBuffer(glArrayBuffer, 0);
 
     malloc.free(buffer);
   }
 
   void delete() {
-    final idPointer = malloc<Uint32>();
+    final idPointer = malloc<UnsignedInt>();
     idPointer[0] = _id;
-    glDeleteBuffers(1, idPointer);
+    gl.deleteBuffers(1, idPointer);
     malloc.free(idPointer);
   }
 }
@@ -102,29 +103,29 @@ class GlVertexArray {
   late final int _id;
 
   GlVertexArray() {
-    final idPointer = calloc<Uint32>();
-    glGenVertexArrays(1, idPointer);
+    final idPointer = calloc<UnsignedInt>();
+    gl.genVertexArrays(1, idPointer);
     _id = idPointer.value;
   }
 
   void draw(int count) {
     bind();
-    glDrawArrays(GL_TRIANGLES, 0, count);
+    gl.drawArrays(glTriangles, 0, count);
     unbind();
   }
 
   void bind() {
-    glBindVertexArray(_id);
+    gl.bindVertexArray(_id);
   }
 
   void unbind() {
-    glBindVertexArray(0);
+    gl.bindVertexArray(0);
   }
 
   void delete() {
-    final idPointer = malloc<Uint32>();
+    final idPointer = malloc<UnsignedInt>();
     idPointer[0] = _id;
-    glDeleteVertexArrays(1, idPointer);
+    gl.deleteVertexArrays(1, idPointer);
     malloc.free(idPointer);
   }
 }

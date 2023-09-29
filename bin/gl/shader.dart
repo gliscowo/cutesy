@@ -1,9 +1,9 @@
 import 'dart:ffi';
 import 'dart:io';
 
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
-import 'package:opengl/opengl.dart';
 import 'package:path/path.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -14,11 +14,11 @@ final Logger _logger = Logger("cutesy.shader_compiler");
 class GlShader {
   final int _id;
 
-  GlShader.vertex(File source) : _id = glCreateShader(GL_VERTEX_SHADER) {
+  GlShader.vertex(File source) : _id = gl.createShader(glVertexShader) {
     _loadAndCompile(source);
   }
 
-  GlShader.fragment(File source) : _id = glCreateShader(GL_FRAGMENT_SHADER) {
+  GlShader.fragment(File source) : _id = gl.createShader(glFragmentShader) {
     _loadAndCompile(source);
   }
 
@@ -30,11 +30,11 @@ class GlShader {
     final sourceArray = malloc<Pointer<Utf8>>();
     sourceArray[0] = sourceString;
 
-    glShaderSource(_id, 1, sourceArray, nullptr);
-    glCompileShader(_id);
+    gl.shaderSource(_id, 1, sourceArray.cast(), nullptr);
+    gl.compileShader(_id);
 
-    final success = malloc<Int32>();
-    glGetShaderiv(_id, GL_COMPILE_STATUS, success);
+    final success = malloc<Int>();
+    gl.getShaderiv(_id, glCompileStatus, success);
     _logger.info("Shader '${basename(source.path)}' compile success: ${success.value}");
 
     malloc.free(sourceString);
@@ -57,54 +57,54 @@ class GlProgram {
           GlShader.fragment(File("resources/shader/$fragment.frag"))
         ]);
 
-  GlProgram(this.name, List<GlShader> shaders) : _id = glCreateProgram() {
+  GlProgram(this.name, List<GlShader> shaders) : _id = gl.createProgram() {
     for (final shader in shaders) {
-      glAttachShader(_id, shader.id);
+      gl.attachShader(_id, shader.id);
     }
 
-    glLinkProgram(_id);
+    gl.linkProgram(_id);
 
     for (final shader in shaders) {
-      glDeleteShader(shader.id);
+      gl.deleteShader(shader.id);
     }
 
-    final success = malloc<Int32>();
-    glGetProgramiv(_id, GL_LINK_STATUS, success);
+    final success = malloc<Int>();
+    gl.getProgramiv(_id, glLinkStatus, success);
     _logger.info("Program '$_id' link success: ${success.value}");
     malloc.free(success);
   }
 
   int get id => _id;
-  void use() => glUseProgram(_id);
+  void use() => gl.useProgram(_id);
 
   void uniformMat4(String uniform, Matrix4 value) {
     _floatBuffer.asTypedList(value.storage.length).setRange(0, value.storage.length, value.storage);
-    glUniformMatrix4fv(_uniformLocation(uniform), 1, GL_FALSE, _floatBuffer);
+    gl.uniformMatrix4fv(_uniformLocation(uniform), 1, glFalse, _floatBuffer);
   }
 
   void uniform1f(String uniform, double value) {
-    glUniform1f(_uniformLocation(uniform), value);
+    gl.uniform1f(_uniformLocation(uniform), value);
   }
 
   void uniform2vf(String uniform, Vector2 vec) => uniform2f(uniform, vec.x, vec.y);
   void uniform2f(String uniform, double x, double y) {
-    glUniform2f(_uniformLocation(uniform), x, y);
+    gl.uniform2f(_uniformLocation(uniform), x, y);
   }
 
   void uniform3vf(String uniform, Vector3 vec) => uniform3f(uniform, vec.x, vec.y, vec.z);
   void uniform3f(String uniform, double x, double y, double z) {
-    glUniform3f(_uniformLocation(uniform), x, y, z);
+    gl.uniform3f(_uniformLocation(uniform), x, y, z);
   }
 
   void uniformSampler(String uniform, int texture, int index) {
-    glUniform1i(_uniformLocation(uniform), index);
+    gl.uniform1i(_uniformLocation(uniform), index);
 
-    glActiveTexture(GL_TEXTURE0 + index);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    gl.activeTexture(glTexture0 + index);
+    gl.bindTexture(glTexture2d, texture);
   }
 
   int _uniformLocation(String uniform) =>
-      _uniformCache.putIfAbsent(uniform, () => uniform.withAsNative((utf8) => glGetUniformLocation(_id, utf8)));
+      _uniformCache.putIfAbsent(uniform, () => uniform.withAsNative((utf8) => gl.getUniformLocation(_id, utf8.cast())));
 
-  int getAttributeLocation(String attibute) => attibute.withAsNative((utf8) => glGetAttribLocation(_id, utf8));
+  int getAttributeLocation(String attibute) => attibute.withAsNative((utf8) => gl.getAttribLocation(_id, utf8.cast()));
 }

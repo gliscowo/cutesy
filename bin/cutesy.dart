@@ -2,10 +2,10 @@ import 'dart:ffi' as ffi;
 import 'dart:io';
 import 'dart:math';
 
+import 'package:dart_glfw/dart_glfw.dart';
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart' as ffi;
-import 'package:glfw/glfw.dart';
 import 'package:logging/logging.dart';
-import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'color.dart';
@@ -28,7 +28,7 @@ import 'ui/sizing.dart';
 import 'ui/surface.dart';
 import 'window.dart';
 
-typedef GLFWerrorfun = ffi.Void Function(ffi.Int32, ffi.Pointer<ffi.Utf8>);
+typedef GLFWerrorfun = ffi.Void Function(ffi.Int, ffi.Pointer<ffi.Char>);
 
 bool _running = true;
 
@@ -37,44 +37,45 @@ late final Window _window;
 final Logger _logger = Logger("cutesy");
 final Logger _glfwLogger = Logger("cutesy.glfw");
 
+final gl = loadOpenGL();
+final glfw = loadGLFW("resources/lib/libglfw.so.3");
+
 void main(List<String> args) {
   Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((event) {
     print("[${event.loggerName}] (${event.level.toString().toLowerCase()}) ${event.message}");
   });
 
-  ffi.DynamicLibrary.open("resources/lib/libglfw.so.3");
-
-  if (glfwInit() != GLFW_TRUE) {
+  if (glfw.init() != glfwTrue) {
     _logger.severe("GLFW init failed");
     exit(-1);
   }
 
-  glfwSetErrorCallback(ffi.Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
+  glfw.setErrorCallback(ffi.Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
 
   _window = Window(800, 450, "cutesy", debug: true);
 
-  glfwMakeContextCurrent(_window.handle);
+  glfw.makeContextCurrent(_window.handle);
   attachGlErrorCallback();
 
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 
   _window.onResize.listen((event) {
-    glViewport(0, 0, event.width, event.height);
+    gl.viewport(0, 0, event.width, event.height);
     setOrthographicMatrix(projection, 0, event.width.toDouble(), event.height.toDouble(), 0, 0, 1000);
   });
 
   final nunito = FontFamily("Nunito", 30);
   final cascadia = FontFamily("CascadiaCode", 20);
 
-  _window.onKey.where((event) => event.action == GLFW_PRESS).map((event) => event.key).listen((key) {
-    if (key == GLFW_KEY_ESCAPE) _running = false;
-    if (key == GLFW_KEY_F11) _window.toggleFullscreen();
+  _window.onKey.where((event) => event.action == glfwPress).map((event) => event.key).listen((key) {
+    if (key == glfwKeyEscape) _running = false;
+    if (key == glfwKeyF11) _window.toggleFullscreen();
   });
 
   bool inspector = false;
-  _window.onKey.where((event) => event.action == GLFW_PRESS).listen((event) {
-    if (event.key != GLFW_KEY_LEFT_SHIFT || (event.mods & GLFW_MOD_CONTROL) == 0) return;
+  _window.onKey.where((event) => event.action == glfwPress).listen((event) {
+    if (event.key != glfwKeyLeftShift || (event.mods & glfwModControl) == 0) return;
     inspector = !inspector;
   });
 
@@ -82,11 +83,11 @@ void main(List<String> args) {
     _logger.info("got char: $char");
   });
 
-  double lastTime = glfwGetTime();
+  double lastTime = glfw.getTime();
   int frames = 0;
   int lastFps = 0;
   double passedTime = 0;
-  glfwSwapInterval(0);
+  glfw.swapInterval(0);
 
   final renderContext = RenderContext(_window, [
     GlProgram.vertexFragment("hsv", "position", "hsv"),
@@ -131,7 +132,7 @@ void main(List<String> args) {
     ..inflate(LayoutContext.ofWindow(_window, textRenderer))
     ..mount(null, 0, 0);
 
-  _window.onMouseButton.where((event) => event.action == GLFW_PRESS).listen((event) {
+  _window.onMouseButton.where((event) => event.action == glfwPress).listen((event) {
     layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
   });
 
@@ -139,20 +140,20 @@ void main(List<String> args) {
     layout.childById<TextField>("text-field")!.onCharTyped(String.fromCharCode(event), 0);
   });
 
-  _window.onKey.where((event) => event.action == GLFW_PRESS).listen((event) {
+  _window.onKey.where((event) => event.action == glfwPress).listen((event) {
     layout.childById<TextField>("text-field")!.onKeyPress(event.key, event.scancode, event.mods);
   });
 
   final frameMesh = MeshBuffer(posColorVertexDescriptor, renderContext.findProgram("pos_color"));
   final fps = <int>[];
 
-  while (_running && glfwWindowShouldClose(_window.handle) != GLFW_TRUE) {
-    glClearColor(1, 1, 1, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glEnable(GL_BLEND);
+  while (_running && glfw.windowShouldClose(_window.handle) != glfwTrue) {
+    gl.clearColor(1, 1, 1, 0);
+    gl.clear(glColorBufferBit);
+    gl.enable(glBlend);
 
-    final delta = glfwGetTime() - lastTime;
-    lastTime = glfwGetTime();
+    final delta = glfw.getTime() - lastTime;
+    lastTime = glfw.getTime();
 
     textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
         color: Color.black);
@@ -207,11 +208,11 @@ void main(List<String> args) {
     frames++;
   }
 
-  glfwTerminate();
+  glfw.terminate();
 }
 
-void onGlfwError(int errorCode, ffi.Pointer<ffi.Utf8> description) {
-  _glfwLogger.severe("GLFW Error: ${description.toDartString()} ($errorCode)");
+void onGlfwError(int errorCode, ffi.Pointer<ffi.Char> description) {
+  _glfwLogger.severe("GLFW Error: ${description.cast<ffi.Utf8>().toDartString()} ($errorCode)");
 }
 
 extension CString on String {
@@ -234,11 +235,11 @@ void _cursor(CursorStyle style) {
   final lastCursor = _currentCursor;
 
   if (style != CursorStyle.none) {
-    _currentCursor = glfwCreateStandardCursor(style.glfw);
-    glfwSetCursor(_window.handle, _currentCursor!);
+    _currentCursor = glfw.createStandardCursor(style.glfw);
+    glfw.setCursor(_window.handle, _currentCursor!);
   } else {
     _currentCursor = null;
   }
 
-  if (lastCursor != null) glfwDestroyCursor(lastCursor);
+  if (lastCursor != null) glfw.destroyCursor(lastCursor);
 }

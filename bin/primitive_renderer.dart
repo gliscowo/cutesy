@@ -1,8 +1,9 @@
-import 'package:opengl/opengl.dart';
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'color.dart';
 import 'context.dart';
+import 'cutesy.dart';
 import 'gl/framebuffer.dart';
 import 'gl/vertex_buffer.dart';
 import 'gl/vertex_descriptor.dart';
@@ -39,7 +40,7 @@ class ImmediatePrimitiveRenderer {
 
     if (outlineThickness != null) buffer.program.uniform1f("uThickness", outlineThickness);
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
 
     buffer.clear();
     buildRect(buffer.vertex, x, y, width, height, color);
@@ -54,7 +55,7 @@ class ImmediatePrimitiveRenderer {
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection);
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
 
     _posColorBuffer.clear();
     buildRect(_posColorBuffer.vertex, x, y, width, height, color);
@@ -67,8 +68,8 @@ class ImmediatePrimitiveRenderer {
     _blurFramebuffer
       ..bind(read: false)
       ..clear(Color.black);
-    glBlitFramebuffer(0, 0, _context.window.width, _context.window.height, 0, 0, _blurFramebuffer.width,
-        _blurFramebuffer.height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    gl.blitFramebuffer(0, 0, _context.window.width, _context.window.height, 0, 0, _blurFramebuffer.width,
+        _blurFramebuffer.height, glColorBufferBit, glLinear);
     _blurFramebuffer.unbind(read: false);
 
     _blurBuffer.program
@@ -81,7 +82,7 @@ class ImmediatePrimitiveRenderer {
       ..uniform1f("uQuality", 3)
       ..uniform1f("uSize", 5);
 
-    glDisable(GL_BLEND);
+    gl.disable(glBlend);
 
     _posColorBuffer.clear();
     buildRect(_posColorBuffer.vertex, x, y, width, height, color);
@@ -89,7 +90,7 @@ class ImmediatePrimitiveRenderer {
       ..upload(dynamic: true)
       ..draw();
 
-    glEnable(GL_BLEND);
+    gl.enable(glBlend);
   }
 
   void circle(double x, double y, double radius, Color color, Matrix4 projection) {
@@ -100,7 +101,7 @@ class ImmediatePrimitiveRenderer {
       ..uniform2f("uLocation", x, _context.window.height - y - radius * 2)
       ..uniform1f("uRadius", radius);
 
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
 
     _circleBuffer.clear();
     buildRect(_circleBuffer.vertex, x, y, radius * 2, radius * 2, color);

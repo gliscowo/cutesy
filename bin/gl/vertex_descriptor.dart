@@ -1,10 +1,13 @@
-import 'package:opengl/opengl.dart';
+import 'dart:ffi';
+
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../cutesy.dart';
 import 'vertex_buffer.dart';
 
 enum VertexElement {
-  float(4, GL_FLOAT);
+  float(4, glFloat);
 
   final int size, glType;
   const VertexElement(this.size, this.glType);
@@ -51,8 +54,15 @@ class VertexDescriptor<VertexFunction extends Function> {
     for (final attr in _attributes) {
       final location = attributeLookup(attr.name);
 
-      glEnableVertexAttribArray(location);
-      glVertexAttribPointer(location, attr.count, attr.element.glType, GL_FALSE, _vertexSize, attr.offset);
+      gl.enableVertexAttribArray(location);
+      gl.vertexAttribPointer(
+        location,
+        attr.count,
+        attr.element.glType,
+        glFalse,
+        _vertexSize,
+        Pointer.fromAddress(attr.offset),
+      );
     }
   }
 

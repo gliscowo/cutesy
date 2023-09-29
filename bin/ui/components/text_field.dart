@@ -1,11 +1,12 @@
 import 'dart:math';
 
+import 'package:dart_glfw/dart_glfw.dart';
 import 'package:ffi/ffi.dart';
-import 'package:glfw/glfw.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../../color.dart';
 import '../../context.dart';
+import '../../cutesy.dart';
 import '../../text/text.dart';
 import '../component.dart';
 
@@ -97,20 +98,20 @@ class TextField extends Component {
 
   @override
   bool onKeyPress(int keyCode, int scanCode, int modifiers) {
-    if (keyCode == GLFW_KEY_BACKSPACE) {
+    if (keyCode == glfwKeyBackspace) {
       if (_content.isEmpty) return true;
 
       final runes = _content.runes.toList();
       runes.removeAt(runes.length - 1 + _cursorPosition);
       _content = String.fromCharCodes(runes);
       return true;
-    } else if (keyCode == GLFW_KEY_V && (modifiers & GLFW_MOD_CONTROL) != 0) {
-      _insert(glfwGetClipboardString(layoutContext!.window.handle).cast<Utf8>().toDartString());
+    } else if (keyCode == glfwKeyV && (modifiers & glfwModControl) != 0) {
+      _insert(glfw.getClipboardString(layoutContext!.window.handle).cast<Utf8>().toDartString());
       return true;
-    } else if (keyCode == GLFW_KEY_LEFT) {
+    } else if (keyCode == glfwKeyLeft) {
       _cursorPosition = max(-_content.runes.length, _cursorPosition - 1);
       return true;
-    } else if (keyCode == GLFW_KEY_RIGHT) {
+    } else if (keyCode == glfwKeyRight) {
       _cursorPosition = min(0, _cursorPosition + 1);
       return true;
     } else {

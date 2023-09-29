@@ -1,19 +1,19 @@
 import 'dart:async';
 import 'dart:ffi';
 
+import 'package:dart_glfw/dart_glfw.dart';
 import 'package:ffi/ffi.dart';
-import 'package:glfw/glfw.dart';
 import 'package:vector_math/vector_math.dart';
 
 import 'cutesy.dart';
 
-typedef _GLFWwindowresizefun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
-typedef _GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Uint32, Uint32);
+typedef _GLFWwindowresizefun = Void Function(Pointer<GLFWwindow>, Int, Int);
+typedef _GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Int, Int);
 
-typedef _GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32, Int32);
-typedef _GLFWcharfun = Void Function(Pointer<GLFWwindow>, Int32);
+typedef _GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int, Int, Int, Int);
+typedef _GLFWcharfun = Void Function(Pointer<GLFWwindow>, UnsignedInt);
 typedef _GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
-typedef _GLFWmousebuttonfun = Void Function(Pointer<GLFWwindow>, Int32, Int32, Int32);
+typedef _GLFWmousebuttonfun = Void Function(Pointer<GLFWwindow>, Int, Int, Int);
 
 class Window {
   static final Map<int, Window> _knownWindows = {};
@@ -39,26 +39,26 @@ class Window {
   Window(int width, int height, String title, {bool debug = false, int samples = 0})
       : _width = width,
         _height = height {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfw.windowHint(glfwContextVersionMajor, 4);
+    glfw.windowHint(glfwContextVersionMinor, 6);
+    glfw.windowHint(glfwOpenglProfile, glfwOpenglCoreProfile);
 
-    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+    glfw.windowHint(glfwFloating, glfwTrue);
 
-    if (debug) glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-    if (samples != 0) glfwWindowHint(GLFW_SAMPLES, samples);
+    if (debug) glfw.windowHint(glfwOpenglDebugContext, glfwTrue);
+    if (samples != 0) glfw.windowHint(glfwSamples, samples);
 
-    _handle = title.withAsNative((utf8) => glfwCreateWindow(width, height, utf8, nullptr, nullptr));
+    _handle = title.withAsNative((utf8) => glfw.createWindow(width, height, utf8.cast(), nullptr, nullptr));
 
     if (_handle.address == 0) {
-      glfwTerminate();
+      glfw.terminate();
       throw Exception("Failed to create window");
     }
 
-    final windowX = malloc<Int32>();
-    final windowY = malloc<Int32>();
+    final windowX = malloc<Int>();
+    final windowY = malloc<Int>();
 
-    glfwGetWindowPos(_handle, windowX, windowY);
+    glfw.getWindowPos(_handle, windowX, windowY);
     _x = windowX.value;
     _y = windowY.value;
 
@@ -66,12 +66,12 @@ class Window {
     malloc.free(windowY);
 
     _knownWindows[_handle.address] = this;
-    glfwSetWindowSizeCallback(_handle, Pointer.fromFunction<_GLFWwindowresizefun>(_onResize));
-    glfwSetWindowPosCallback(_handle, Pointer.fromFunction<_GLFWwindowposfun>(_onMove));
-    glfwSetCursorPosCallback(_handle, Pointer.fromFunction<_GLFWcursorposfun>(_onMousePos));
-    glfwSetMouseButtonCallback(_handle, Pointer.fromFunction<_GLFWmousebuttonfun>(_onMouseButton));
-    glfwSetCharCallback(_handle, Pointer.fromFunction<_GLFWcharfun>(_onChar));
-    glfwSetKeyCallback(_handle, Pointer.fromFunction<_GLFWkeyfun>(_onKey));
+    glfw.setWindowSizeCallback(_handle, Pointer.fromFunction<_GLFWwindowresizefun>(_onResize));
+    glfw.setWindowPosCallback(_handle, Pointer.fromFunction<_GLFWwindowposfun>(_onMove));
+    glfw.setCursorPosCallback(_handle, Pointer.fromFunction<_GLFWcursorposfun>(_onMousePos));
+    glfw.setMouseButtonCallback(_handle, Pointer.fromFunction<_GLFWmousebuttonfun>(_onMouseButton));
+    glfw.setCharCallback(_handle, Pointer.fromFunction<_GLFWcharfun>(_onChar));
+    glfw.setKeyCallback(_handle, Pointer.fromFunction<_GLFWkeyfun>(_onKey));
   }
 
   static void _onMove(Pointer<GLFWwindow> handle, int x, int y) {
@@ -123,7 +123,7 @@ class Window {
 
   void toggleFullscreen() {
     if (_fullscreen) {
-      glfwSetWindowMonitor(_handle, nullptr, _restoreX, _restoreY, _restoreWidth, _restoreHeight, GLFW_DONT_CARE);
+      glfw.setWindowMonitor(_handle, nullptr, _restoreX, _restoreY, _restoreWidth, _restoreHeight, glfwDontCare);
       _fullscreen = false;
     } else {
       _restoreX = _x;
@@ -131,14 +131,14 @@ class Window {
       _restoreWidth = _width;
       _restoreHeight = _height;
 
-      final width = malloc<Int32>();
-      final height = malloc<Int32>();
-      final monitors = malloc<Int32>();
+      final width = malloc<Int>();
+      final height = malloc<Int>();
+      final monitors = malloc<Int>();
 
-      final monitor = glfwGetMonitors(monitors).cast<Pointer<GLFWmonitor>>()[0];
-      glfwGetMonitorWorkarea(monitor, nullptr, nullptr, width, height);
+      final monitor = glfw.getMonitors(monitors)[0];
+      glfw.getMonitorWorkarea(monitor, nullptr, nullptr, width, height);
 
-      glfwSetWindowMonitor(_handle, monitor, 0, 0, width.value, height.value, GLFW_DONT_CARE);
+      glfw.setWindowMonitor(_handle, monitor, 0, 0, width.value, height.value, glfwDontCare);
 
       malloc.free(width);
       malloc.free(height);
@@ -149,8 +149,8 @@ class Window {
   }
 
   void nextFrame() {
-    glfwSwapBuffers(_handle);
-    glfwPollEvents();
+    glfw.swapBuffers(_handle);
+    glfw.pollEvents();
   }
 
   double get cursorX => _cursorPos.x;

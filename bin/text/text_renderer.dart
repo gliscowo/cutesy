@@ -2,13 +2,14 @@ import 'dart:ffi' hide Size;
 import 'dart:io';
 import 'dart:math';
 
+import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
-import 'package:opengl/opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../color.dart';
 import '../context.dart';
+import '../cutesy.dart';
 import '../gl/shader.dart';
 import '../gl/vertex_buffer.dart';
 import '../gl/vertex_descriptor.dart';
@@ -120,9 +121,9 @@ class Font {
       }
     }
 
-    glBindTexture(GL_TEXTURE_2D, _glyphTextures.first);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, u, v, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixelBuffer);
+    gl.bindTexture(glTexture2d, _glyphTextures.first);
+    gl.pixelStorei(glUnpackAlignment, 1);
+    gl.texSubImage2D(glTexture2d, 0, u, v, width, height, glRgb, glUnsignedByte, pixelBuffer.cast());
 
     return _glyphs[index] = Glyph(
       texture,
@@ -157,20 +158,20 @@ class Font {
   }
 
   static int _createGlyphAtlasTexture() {
-    final texture = malloc<Uint32>();
-    glGenTextures(1, texture);
+    final texture = malloc<UnsignedInt>();
+    gl.genTextures(1, texture);
     final textureId = texture.value;
     malloc.free(texture);
 
-    glBindTexture(GL_TEXTURE_2D, textureId);
+    gl.bindTexture(glTexture2d, textureId);
 
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1024, 1024, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+    gl.pixelStorei(glUnpackAlignment, 1);
+    gl.texImage2D(glTexture2d, 0, glRgb, 1024, 1024, 0, glRgb, glUnsignedByte, nullptr);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    gl.texParameteri(glTexture2d, glTextureWrapS, glClampToEdge);
+    gl.texParameteri(glTexture2d, glTextureWrapT, glClampToEdge);
+    gl.texParameteri(glTexture2d, glTextureMinFilter, glLinear);
+    gl.texParameteri(glTexture2d, glTextureMagFilter, glLinear);
 
     return textureId;
   }
@@ -265,11 +266,11 @@ class TextRenderer {
         ..vertex(xPos + width, yPos + height, u1, v1, glyphColor);
     }
 
-    glActiveTexture(GL_TEXTURE0);
-    glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
+    gl.activeTexture(glTexture0);
+    gl.blendFunc(glSrc1Color, glOneMinusSrc1Color);
 
     renderObjects.forEach((texture, mesh) {
-      glBindTexture(GL_TEXTURE_2D, texture);
+      gl.bindTexture(glTexture2d, texture);
       mesh
         ..upload(dynamic: true)
         ..draw();
