@@ -32,7 +32,7 @@ class TextField extends Component {
       width.toDouble(),
       height.toDouble(),
       5,
-      Color.ofRgb(0x323232),
+      focusHandler?.focused == this ? Color.ofRgb(0x828282) : Color.ofRgb(0x323232),
       context.projection,
       outlineThickness: 1.5,
     );
@@ -59,6 +59,9 @@ class TextField extends Component {
     var clusters = Text.string("$_cursorPosition", style: TextStyle(fontFamily: "CascadiaCode"));
     context.textRenderer.drawText(x + 5, y + 5 + height, clusters, context.projection, scale: .8);
   }
+
+  @override
+  void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double delta) {}
 
   double _cursorOffset(Text text) {
     if (text.glyphs.isEmpty) return 0;

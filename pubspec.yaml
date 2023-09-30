@@ -12,11 +12,11 @@ dependencies:
   dart_glfw: 
     git:
       url: 'https://github.com/gliscowo/dart_glfw.git'
-      ref: e7b3814
+      ref: 7b082a7
   dart_opengl:
     git:
       url: 'https://github.com/gliscowo/dart_opengl.git'
-      ref: 9fad60e
+      ref: 443eeb7
   logging: ^1.1.0
   meta: ^1.9.0
   path: ^1.8.3

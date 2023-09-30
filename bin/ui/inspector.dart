@@ -42,7 +42,7 @@ abstract class Inspector {
   static void drawInspector(DrawContext context, ParentComponent root, double mouseX, double mouseY, bool onlyHovered) {
     final children = <Component>[];
     if (!onlyHovered) {
-      root.collectChildren(children);
+      root.collectDescendants(children);
     } else if (root.childAt(mouseX.toInt(), mouseY.toInt()) != null) {
       children.add(root.childAt(mouseX.toInt(), mouseY.toInt())!);
     }

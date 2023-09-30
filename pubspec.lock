@@ -93,20 +93,20 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: e7b3814
-      resolved-ref: e7b38144af841d3eb066c385c471205d114fb2c9
+      ref: "7b082a7"
+      resolved-ref: "7b082a79d2240beac2be9ee2e5ee1c18cf6ad31e"
       url: "https://github.com/gliscowo/dart_glfw.git"
     source: git
-    version: "0.1.0"
+    version: "0.1.1"
   dart_opengl:
     dependency: "direct main"
     description:
       path: "."
-      ref: "9fad60e"
-      resolved-ref: "9fad60e42c6a162c297d2ecf76a9c56ef3a815f0"
+      ref: "443eeb7"
+      resolved-ref: "443eeb76e665b609547204285abb638d59d36ab3"
       url: "https://github.com/gliscowo/dart_opengl.git"
     source: git
-    version: "0.1.0"
+    version: "0.1.1"
   ffi:
     dependency: "direct main"
     description:

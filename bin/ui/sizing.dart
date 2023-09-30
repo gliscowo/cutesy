@@ -10,7 +10,7 @@ class Sizing implements Animatable<Sizing> {
   const Sizing._(this.method, this.value);
 
   const Sizing.fixed(int value) : this._(SizingMethod.fixed, value);
-  const Sizing.fill(int value) : this._(SizingMethod.fill, value);
+  const Sizing.fill([int value = 100]) : this._(SizingMethod.fill, value);
   factory Sizing.content([int? padding]) => padding == null ? _contentSizing : Sizing._(SizingMethod.content, padding);
 
   bool get isContent => method == SizingMethod.content;

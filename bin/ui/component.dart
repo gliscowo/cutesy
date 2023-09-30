@@ -8,6 +8,7 @@ import '../text/text_renderer.dart';
 import '../window.dart';
 import 'animation.dart';
 import 'events.dart';
+import 'focus_handler.dart';
 import 'insets.dart';
 import 'math.dart';
 import 'positioning.dart';
@@ -66,11 +67,11 @@ abstract class Component with Rectangle {
   /// that this component is currently focused
   void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double delta) {
     context.primitives.roundedRect(
-      x.toDouble(),
-      y.toDouble(),
-      width.toDouble(),
-      height.toDouble(),
-      0,
+      x.toDouble() - 2.5,
+      y.toDouble() - 2.5,
+      width.toDouble() + 5,
+      height.toDouble() + 5,
+      5,
       Color.white,
       context.projection,
       outlineThickness: 1,
@@ -80,10 +81,8 @@ abstract class Component with Rectangle {
   /// The parent of this component
   ParentComponent? get parent => _parent;
 
-  ///
-  /// @return The focus handler of this component hierarchy
-  ///
-  // FocusHandler? focusHandler();
+  /// The focus handler of this component hierarchy
+  FocusHandler? get focusHandler => parent?.focusHandler;
 
   /// The positioning of this component
   final AnimatableProperty<Positioning> positioning = AnimatableProperty.create(Positioning.layout);
@@ -404,7 +403,6 @@ abstract class Component with Rectangle {
 }
 
 extension Configure<C extends Component> on C {
-  ///
   /// Execute the given [closure] immediately with this
   /// component as the argument. This is primarily useful for calling
   /// methods that don't return the component and could thus not be
@@ -414,9 +412,6 @@ extension Configure<C extends Component> on C {
   /// and consolidated into a single update that's emitted after execution has
   /// finished. Thus, you can also employ this to efficiently update multiple
   /// properties on a component.
-  ///
-  /// **It is imperative that the type parameter be declared to a type that
-  /// this component can be represented as - otherwise an exception is thrown**
   ///
   /// Example:
   ///
@@ -449,6 +444,7 @@ extension Configure<C extends Component> on C {
 
 abstract class ParentComponent extends Component {
   List<void Function()>? _taskQueue;
+  FocusHandler? _focusHandler;
 
   /// How this component vertically arranges its children
   final Observable<VerticalAlignment> verticalAlignment = Observable.create(VerticalAlignment.top);
@@ -486,6 +482,9 @@ abstract class ParentComponent extends Component {
   }
 
   @override
+  FocusHandler? get focusHandler => _focusHandler ?? super.focusHandler;
+
+  @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
     surface(context, this);
   }
@@ -516,7 +515,11 @@ abstract class ParentComponent extends Component {
   @override
   void mount(ParentComponent? parent, int x, int y) {
     super.mount(parent, x, y);
-    if (!hasParent) _taskQueue = [];
+
+    if (!hasParent) {
+      _taskQueue = [];
+      _focusHandler = FocusHandler(this);
+    }
   }
 
   @override
@@ -585,6 +588,10 @@ abstract class ParentComponent extends Component {
   bool onMouseDown(double mouseX, double mouseY, int button) {
     final eventResult = super.onMouseDown(mouseX, mouseY, button);
 
+    if (_focusHandler != null) {
+      _focusHandler!.updateClickFocus(x + mouseX, y + mouseY);
+    }
+
     var iter = children.reversed.iterator;
     while (iter.moveNext()) {
       var child = iter.current;
@@ -595,6 +602,16 @@ abstract class ParentComponent extends Component {
     }
 
     return eventResult;
+  }
+
+  @override
+  bool onMouseUp(double mouseX, double mouseY, int button) {
+    if (_focusHandler?.focused != null) {
+      final focused = _focusHandler!.focused!;
+      return focused.onMouseDown(x + mouseX - focused.x, y + mouseY - focused.y, button);
+    } else {
+      return super.onMouseUp(mouseX, mouseY, button);
+    }
   }
 
   @override
@@ -611,6 +628,40 @@ abstract class ParentComponent extends Component {
     }
 
     return eventResult;
+  }
+
+  @override
+  bool onKeyPress(int keyCode, int scanCode, int modifiers) {
+    if (_focusHandler == null) return false;
+
+    if (keyCode == glfwKeyTab) {
+      _focusHandler!.cycle((modifiers & glfwModShift) == 0);
+    } else if (_focusHandler!.focused != null) {
+      return _focusHandler!.focused!.onKeyPress(keyCode, scanCode, modifiers);
+    }
+
+    return super.onKeyPress(keyCode, scanCode, modifiers);
+  }
+
+  @override
+  bool onCharTyped(String chr, int modifiers) {
+    if (_focusHandler == null) return false;
+
+    if (_focusHandler!.focused != null) {
+      return _focusHandler!.focused!.onCharTyped(chr, modifiers);
+    }
+
+    return super.onCharTyped(chr, modifiers);
+  }
+
+  @override
+  bool onMouseDrag(double mouseX, double mouseY, double deltaX, double deltaY, int button) {
+    if (focusHandler?.focused != null) {
+      final focused = _focusHandler!.focused!;
+      return focused.onMouseDrag(x + mouseX - focused.x, y + mouseY - focused.y, deltaX, deltaY, button);
+    } else {
+      return super.onMouseDrag(mouseX, mouseY, deltaX, deltaY, button);
+    }
   }
 
   // @Override
@@ -670,11 +721,11 @@ abstract class ParentComponent extends Component {
 
   /// Collect the entire component hierarchy
   /// below this component into [list]
-  void collectChildren(List<Component> list) {
+  void collectDescendants(List<Component> list) {
     list.add(this);
     for (var child in children) {
       if (child is ParentComponent) {
-        child.collectChildren(list);
+        child.collectDescendants(list);
       } else {
         list.add(child);
       }
@@ -769,9 +820,9 @@ abstract class ParentComponent extends Component {
       // matrices.translate(0, 0, child.zIndex());
 
       child.draw(context, mouseX, mouseY, delta);
-      // if (focusHandler.lastFocusSource() == FocusSource.KEYBOARD_CYCLE && focusHandler.focused() == child) {
-      //     child.drawFocusHighlight(matrices, mouseX, mouseY, partialTicks, delta);
-      // }
+      if (focusHandler?.lastFocusSource == FocusSource.keyboardCycle && focusHandler?.focused == child) {
+        child.drawFocusHighlight(context, mouseX, mouseY, delta);
+      }
 
       // matrices.translate(0, 0, -child.zIndex());
     }

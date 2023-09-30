@@ -1,3 +1,5 @@
+import 'package:dart_glfw/dart_glfw.dart';
+
 import '../../color.dart';
 import '../../context.dart';
 import '../../text/text.dart';
@@ -25,7 +27,7 @@ class Button extends Component {
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
-    if (isInBoundingBox(mouseX.toDouble(), mouseY.toDouble())) {
+    if (isInBoundingBox(mouseX.toDouble(), mouseY.toDouble()) || focusHandler?.focused == this) {
       _hoverTime += computeDelta(_hoverTime, 1, delta * 10);
     } else {
       _hoverTime += computeDelta(_hoverTime, 0, delta * 10);
@@ -51,8 +53,23 @@ class Button extends Component {
   }
 
   @override
+  bool canFocus(FocusSource source) => source == FocusSource.keyboardCycle;
+
+  @override
   bool onMouseDown(double mouseX, double mouseY, int button) {
     callback(this);
     return true;
+  }
+
+  @override
+  bool onKeyPress(int keyCode, int scanCode, int modifiers) {
+    final eventResult = super.onKeyPress(keyCode, scanCode, modifiers);
+
+    if (keyCode == glfwKeySpace || keyCode == glfwKeyEnter) {
+      callback(this);
+      return true;
+    }
+
+    return eventResult;
   }
 }

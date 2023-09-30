@@ -23,6 +23,7 @@ class Window {
   final StreamController<int> _charInputListeners = StreamController.broadcast(sync: true);
   final StreamController<KeyInputEvent> _keyInputListeners = StreamController.broadcast(sync: true);
   final StreamController<MouseInputEvent> _mouseInputListeners = StreamController.broadcast(sync: true);
+  final StreamController<MouseMoveEvent> _mouseMoveListeners = StreamController.broadcast(sync: true);
   final Vector2 _cursorPos = Vector2.zero();
 
   late int _x;
@@ -40,7 +41,7 @@ class Window {
       : _width = width,
         _height = height {
     glfw.windowHint(glfwContextVersionMajor, 4);
-    glfw.windowHint(glfwContextVersionMinor, 6);
+    glfw.windowHint(glfwContextVersionMinor, 5);
     glfw.windowHint(glfwOpenglProfile, glfwOpenglCoreProfile);
 
     glfw.windowHint(glfwFloating, glfwTrue);
@@ -95,6 +96,11 @@ class Window {
   static void _onMousePos(Pointer<GLFWwindow> handle, double mouseX, double mouseY) {
     if (!_knownWindows.containsKey(handle.address)) return;
     final window = _knownWindows[handle.address]!;
+
+    final deltaX = mouseX - window._cursorPos.x, deltaY = mouseY - window._cursorPos.y;
+    if (deltaX != 0 || deltaY != 0) {
+      window._mouseMoveListeners.add(MouseMoveEvent(deltaX, deltaY));
+    }
 
     window._cursorPos.x = mouseX;
     window._cursorPos.y = mouseY;
@@ -161,6 +167,7 @@ class Window {
   Stream<int> get onChar => _charInputListeners.stream;
   Stream<KeyInputEvent> get onKey => _keyInputListeners.stream;
   Stream<MouseInputEvent> get onMouseButton => _mouseInputListeners.stream;
+  Stream<MouseMoveEvent> get onMouseMove => _mouseMoveListeners.stream;
 
   int get x => _x;
   int get y => _y;
@@ -177,4 +184,9 @@ class KeyInputEvent {
 class MouseInputEvent {
   final int button, action, mods;
   MouseInputEvent(this.button, this.action, this.mods);
+}
+
+class MouseMoveEvent {
+  final double deltaX, deltaY;
+  MouseMoveEvent(this.deltaX, this.deltaY);
 }

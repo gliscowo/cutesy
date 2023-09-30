@@ -20,12 +20,14 @@ import 'text/text_renderer.dart';
 import 'ui/component.dart';
 import 'ui/components/button.dart';
 import 'ui/components/label.dart';
+import 'ui/components/slider.dart';
 import 'ui/components/text_field.dart';
 import 'ui/containers/flow_layout.dart';
 import 'ui/insets.dart';
 import 'ui/inspector.dart';
 import 'ui/sizing.dart';
 import 'ui/surface.dart';
+import 'ui/ui_controller.dart';
 import 'window.dart';
 
 typedef GLFWerrorfun = ffi.Void Function(ffi.Int, ffi.Pointer<ffi.Char>);
@@ -102,8 +104,18 @@ void main(List<String> args) {
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
   final textRenderer = TextRenderer(renderContext, nunito, {"Nunito": nunito, "CascadiaCode": cascadia});
 
+  final ui = UIController.ofWindow(
+    _window,
+    textRenderer,
+    (horizontal, vertical) => FlowLayout.vertical()
+      ..horizontalSizing(horizontal)
+      ..verticalSizing(vertical),
+  );
+
   var showGraph = false;
-  final layout = FlowLayout.vertical()
+  var hue = 0.0, sat = 0.0, value = 0.0;
+
+  ui.root
     ..addChild(FlowLayout.horizontal()
       ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
         ..id = "Button 1")
@@ -122,33 +134,32 @@ void main(List<String> args) {
       ..addChild(TextField()
         ..id = "text-field"
         ..verticalSizing(Sizing.fixed(50))
-        ..horizontalSizing(Sizing.fixed(250)))
+        ..horizontalSizing(Sizing.fixed(750)))
       ..padding(Insets.all(10))
       ..gap(5)
       ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)))
+    ..addChild(FlowLayout.horizontal()
+      ..addChild(Label(Text.string("Hue")))
+      ..addChild(Slider()..listener = (p0) => hue = p0))
+    ..addChild(FlowLayout.horizontal()
+      ..addChild(Label(Text.string("Saturation")))
+      ..addChild(Slider()..listener = (p0) => sat = p0))
+    ..addChild(FlowLayout.horizontal()
+      ..addChild(Label(Text.string("Value")))
+      ..addChild(Slider()..listener = (p0) => value = p0))
+    ..gap(25)
     ..horizontalAlignment(HorizontalAlignment.center)
-    ..verticalAlignment(VerticalAlignment.center)
-    ..sizing(Sizing.fill(100))
-    ..inflate(LayoutContext.ofWindow(_window, textRenderer))
-    ..mount(null, 0, 0);
+    ..verticalAlignment(VerticalAlignment.center);
 
-  _window.onMouseButton.where((event) => event.action == glfwPress).listen((event) {
-    layout.onMouseDown(_window.cursorX, _window.cursorY, event.button);
-  });
-
-  _window.onChar.listen((event) {
-    layout.childById<TextField>("text-field")!.onCharTyped(String.fromCharCode(event), 0);
-  });
-
-  _window.onKey.where((event) => event.action == glfwPress).listen((event) {
-    layout.childById<TextField>("text-field")!.onKeyPress(event.key, event.scancode, event.mods);
-  });
+  ui.inflateAndMount();
 
   final frameMesh = MeshBuffer(posColorVertexDescriptor, renderContext.findProgram("pos_color"));
   final fps = <int>[];
 
   while (_running && glfw.windowShouldClose(_window.handle) != glfwTrue) {
-    gl.clearColor(1, 1, 1, 0);
+    var clearColor = Color.ofHsv(hue, sat, value);
+
+    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, 0);
     gl.clear(glColorBufferBit);
     gl.enable(glBlend);
 
@@ -156,7 +167,7 @@ void main(List<String> args) {
     lastTime = glfw.getTime();
 
     textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
-        color: Color.black);
+        color: Color.black, scale: .75);
 
     textRenderer.drawText(
       5,
@@ -164,18 +175,15 @@ void main(List<String> args) {
       Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
       projection,
       color: Color.black,
+      scale: .75,
     );
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
-
-    layout.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
-    layout.draw(drawContext, _window.cursorX.toInt(), _window.cursorY.toInt(), delta);
+    ui.render(drawContext, delta);
 
     if (inspector) {
-      Inspector.drawInspector(drawContext, layout, _window.cursorX, _window.cursorY, true);
+      Inspector.drawInspector(drawContext, ui.root, _window.cursorX, _window.cursorY, true);
     }
-
-    _cursor(layout.childAt(_window.cursorX.toInt(), _window.cursorY.toInt())?.cursorStyle ?? CursorStyle.none);
 
     if (showGraph) {
       frameMesh.clear();
@@ -186,7 +194,13 @@ void main(List<String> args) {
             Color.red.interpolate(Color.green, min(1, measure / 1000)));
       }
 
-      frameMesh.program.use();
+      gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
+
+      frameMesh.program
+        ..use()
+        ..uniformMat4("uTransform", Matrix4.identity())
+        ..uniformMat4("uProjection", projection);
+
       frameMesh
         ..upload(dynamic: true)
         ..draw();
@@ -223,23 +237,4 @@ extension CString on String {
 
     return result;
   }
-}
-
-CursorStyle _currentCursorStyle = CursorStyle.none;
-ffi.Pointer<GLFWcursor>? _currentCursor;
-
-void _cursor(CursorStyle style) {
-  if (_currentCursorStyle == style) return;
-  _currentCursorStyle = style;
-
-  final lastCursor = _currentCursor;
-
-  if (style != CursorStyle.none) {
-    _currentCursor = glfw.createStandardCursor(style.glfw);
-    glfw.setCursor(_window.handle, _currentCursor!);
-  } else {
-    _currentCursor = null;
-  }
-
-  if (lastCursor != null) glfw.destroyCursor(lastCursor);
 }
