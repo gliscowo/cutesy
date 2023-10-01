@@ -13,7 +13,7 @@ enum VertexElement {
   const VertexElement(this.size, this.glType);
 }
 
-typedef PosColorVertexFunction = void Function(Vector3, Vector4);
+typedef PosColorVertexFunction = void Function(Vector3 pos, Vector4 color);
 final VertexDescriptor<PosColorVertexFunction> posColorVertexDescriptor = VertexDescriptor(
   (attribute) {
     attribute("aPos", VertexElement.float, 3);
@@ -25,7 +25,7 @@ final VertexDescriptor<PosColorVertexFunction> posColorVertexDescriptor = Vertex
   },
 );
 
-typedef TextVertexFunction = void Function(double, double, double, double, Vector4);
+typedef TextVertexFunction = void Function(double x, double y, double u, double v, Vector4 color);
 final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
   (attribute) {
     attribute("aPos", VertexElement.float, 2);
@@ -39,7 +39,7 @@ final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescript
 );
 
 class VertexDescriptor<VertexFunction extends Function> {
-  final VertexFunction Function(BufferBuilder) _builderFactory;
+  final VertexFunction Function(BufferWriter) _builderFactory;
   final List<_VertexAttribute> _attributes = [];
   int _vertexSize = 0;
 
@@ -66,7 +66,7 @@ class VertexDescriptor<VertexFunction extends Function> {
     }
   }
 
-  VertexFunction createBuilder(BufferBuilder buffer) => _builderFactory(buffer);
+  VertexFunction createBuilder(BufferWriter buffer) => _builderFactory(buffer);
   int get vertexSize => _vertexSize;
 }
 

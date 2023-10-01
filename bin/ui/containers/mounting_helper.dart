@@ -9,14 +9,16 @@ class MountingHelper {
   final LayoutContext _childContext;
 
   MountingHelper.mountEarly(
-      this._sink, List<Component> children, this._childContext, void Function(Component) layoutFunc) {
-    var lateChildren = <Component>[];
-
+    this._sink,
+    List<Component> children,
+    this._childContext,
+    void Function(Component) layoutFunc,
+  ) {
     for (final child in children) {
       if (child.positioning.value.type != PositioningType.relative) {
         _sink(child, _childContext, layoutFunc);
       } else {
-        lateChildren.add(child);
+        _lateChildren.add(child);
       }
     }
   }

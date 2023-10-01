@@ -7,17 +7,13 @@ import 'dart:ffi' as ffi;
 /// Generated bindings to the FreeType font handling library
 class FreetypeLibrary {
   /// Holds the symbol lookup function.
-  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-      _lookup;
+  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) _lookup;
 
   /// The symbols are looked up in [dynamicLibrary].
-  FreetypeLibrary(ffi.DynamicLibrary dynamicLibrary)
-      : _lookup = dynamicLibrary.lookup;
+  FreetypeLibrary(ffi.DynamicLibrary dynamicLibrary) : _lookup = dynamicLibrary.lookup;
 
   /// The symbols are looked up with [lookup].
-  FreetypeLibrary.fromLookup(
-      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
-          lookup)
+  FreetypeLibrary.fromLookup(ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName) lookup)
       : _lookup = lookup;
 
   ffi.Pointer<ffi.Char> Error_String(
@@ -29,10 +25,8 @@ class FreetypeLibrary {
   }
 
   late final _Error_StringPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(FT_Error)>>(
-          'FT_Error_String');
-  late final _Error_String =
-      _Error_StringPtr.asFunction<ffi.Pointer<ffi.Char> Function(int)>();
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(FT_Error)>>('FT_Error_String');
+  late final _Error_String = _Error_StringPtr.asFunction<ffi.Pointer<ffi.Char> Function(int)>();
 
   int Init_FreeType(
     ffi.Pointer<FT_Library> alibrary,
@@ -43,10 +37,8 @@ class FreetypeLibrary {
   }
 
   late final _Init_FreeTypePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(ffi.Pointer<FT_Library>)>>(
-          'FT_Init_FreeType');
-  late final _Init_FreeType =
-      _Init_FreeTypePtr.asFunction<int Function(ffi.Pointer<FT_Library>)>();
+      _lookup<ffi.NativeFunction<FT_Error Function(ffi.Pointer<FT_Library>)>>('FT_Init_FreeType');
+  late final _Init_FreeType = _Init_FreeTypePtr.asFunction<int Function(ffi.Pointer<FT_Library>)>();
 
   int Done_FreeType(
     FT_Library library1,
@@ -56,11 +48,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Done_FreeTypePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Library)>>(
-          'FT_Done_FreeType');
-  late final _Done_FreeType =
-      _Done_FreeTypePtr.asFunction<int Function(FT_Library)>();
+  late final _Done_FreeTypePtr = _lookup<ffi.NativeFunction<FT_Error Function(FT_Library)>>('FT_Done_FreeType');
+  late final _Done_FreeType = _Done_FreeTypePtr.asFunction<int Function(FT_Library)>();
 
   int New_Face(
     FT_Library library1,
@@ -76,13 +65,11 @@ class FreetypeLibrary {
     );
   }
 
-  late final _New_FacePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Library, ffi.Pointer<ffi.Char>, FT_Long,
-              ffi.Pointer<FT_Face>)>>('FT_New_Face');
-  late final _New_Face = _New_FacePtr.asFunction<
-      int Function(
-          FT_Library, ffi.Pointer<ffi.Char>, int, ffi.Pointer<FT_Face>)>();
+  late final _New_FacePtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Library, ffi.Pointer<ffi.Char>, FT_Long, ffi.Pointer<FT_Face>)>>(
+          'FT_New_Face');
+  late final _New_Face =
+      _New_FacePtr.asFunction<int Function(FT_Library, ffi.Pointer<ffi.Char>, int, ffi.Pointer<FT_Face>)>();
 
   int New_Memory_Face(
     FT_Library library1,
@@ -101,12 +88,11 @@ class FreetypeLibrary {
   }
 
   late final _New_Memory_FacePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Library, ffi.Pointer<FT_Byte>, FT_Long, FT_Long,
-              ffi.Pointer<FT_Face>)>>('FT_New_Memory_Face');
-  late final _New_Memory_Face = _New_Memory_FacePtr.asFunction<
-      int Function(
-          FT_Library, ffi.Pointer<FT_Byte>, int, int, ffi.Pointer<FT_Face>)>();
+          ffi
+          .NativeFunction<FT_Error Function(FT_Library, ffi.Pointer<FT_Byte>, FT_Long, FT_Long, ffi.Pointer<FT_Face>)>>(
+      'FT_New_Memory_Face');
+  late final _New_Memory_Face =
+      _New_Memory_FacePtr.asFunction<int Function(FT_Library, ffi.Pointer<FT_Byte>, int, int, ffi.Pointer<FT_Face>)>();
 
   int Open_Face(
     FT_Library library1,
@@ -123,12 +109,10 @@ class FreetypeLibrary {
   }
 
   late final _Open_FacePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Library, ffi.Pointer<FT_Open_Args>, FT_Long,
-              ffi.Pointer<FT_Face>)>>('FT_Open_Face');
-  late final _Open_Face = _Open_FacePtr.asFunction<
-      int Function(
-          FT_Library, ffi.Pointer<FT_Open_Args>, int, ffi.Pointer<FT_Face>)>();
+          ffi.NativeFunction<FT_Error Function(FT_Library, ffi.Pointer<FT_Open_Args>, FT_Long, ffi.Pointer<FT_Face>)>>(
+      'FT_Open_Face');
+  late final _Open_Face =
+      _Open_FacePtr.asFunction<int Function(FT_Library, ffi.Pointer<FT_Open_Args>, int, ffi.Pointer<FT_Face>)>();
 
   int Attach_File(
     FT_Face face,
@@ -140,11 +124,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Attach_FilePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Face, ffi.Pointer<ffi.Char>)>>('FT_Attach_File');
-  late final _Attach_File = _Attach_FilePtr.asFunction<
-      int Function(FT_Face, ffi.Pointer<ffi.Char>)>();
+  late final _Attach_FilePtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, ffi.Pointer<ffi.Char>)>>('FT_Attach_File');
+  late final _Attach_File = _Attach_FilePtr.asFunction<int Function(FT_Face, ffi.Pointer<ffi.Char>)>();
 
   int Attach_Stream(
     FT_Face face,
@@ -156,12 +138,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Attach_StreamPtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(
-              FT_Face, ffi.Pointer<FT_Open_Args>)>>('FT_Attach_Stream');
-  late final _Attach_Stream = _Attach_StreamPtr.asFunction<
-      int Function(FT_Face, ffi.Pointer<FT_Open_Args>)>();
+  late final _Attach_StreamPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, ffi.Pointer<FT_Open_Args>)>>('FT_Attach_Stream');
+  late final _Attach_Stream = _Attach_StreamPtr.asFunction<int Function(FT_Face, ffi.Pointer<FT_Open_Args>)>();
 
   int Reference_Face(
     FT_Face face,
@@ -171,11 +150,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Reference_FacePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face)>>(
-          'FT_Reference_Face');
-  late final _Reference_Face =
-      _Reference_FacePtr.asFunction<int Function(FT_Face)>();
+  late final _Reference_FacePtr = _lookup<ffi.NativeFunction<FT_Error Function(FT_Face)>>('FT_Reference_Face');
+  late final _Reference_Face = _Reference_FacePtr.asFunction<int Function(FT_Face)>();
 
   int Done_Face(
     FT_Face face,
@@ -185,8 +161,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Done_FacePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face)>>('FT_Done_Face');
+  late final _Done_FacePtr = _lookup<ffi.NativeFunction<FT_Error Function(FT_Face)>>('FT_Done_Face');
   late final _Done_Face = _Done_FacePtr.asFunction<int Function(FT_Face)>();
 
   int Select_Size(
@@ -199,11 +174,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Select_SizePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_Int)>>(
-          'FT_Select_Size');
-  late final _Select_Size =
-      _Select_SizePtr.asFunction<int Function(FT_Face, int)>();
+  late final _Select_SizePtr = _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_Int)>>('FT_Select_Size');
+  late final _Select_Size = _Select_SizePtr.asFunction<int Function(FT_Face, int)>();
 
   int Request_Size(
     FT_Face face,
@@ -216,10 +188,8 @@ class FreetypeLibrary {
   }
 
   late final _Request_SizePtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_Size_Request)>>(
-          'FT_Request_Size');
-  late final _Request_Size =
-      _Request_SizePtr.asFunction<int Function(FT_Face, FT_Size_Request)>();
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_Size_Request)>>('FT_Request_Size');
+  late final _Request_Size = _Request_SizePtr.asFunction<int Function(FT_Face, FT_Size_Request)>();
 
   int Set_Char_Size(
     FT_Face face,
@@ -237,12 +207,10 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Set_Char_SizePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Face, FT_F26Dot6, FT_F26Dot6, FT_UInt,
-              FT_UInt)>>('FT_Set_Char_Size');
-  late final _Set_Char_Size =
-      _Set_Char_SizePtr.asFunction<int Function(FT_Face, int, int, int, int)>();
+  late final _Set_Char_SizePtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_F26Dot6, FT_F26Dot6, FT_UInt, FT_UInt)>>(
+          'FT_Set_Char_Size');
+  late final _Set_Char_Size = _Set_Char_SizePtr.asFunction<int Function(FT_Face, int, int, int, int)>();
 
   int Set_Pixel_Sizes(
     FT_Face face,
@@ -257,10 +225,8 @@ class FreetypeLibrary {
   }
 
   late final _Set_Pixel_SizesPtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_UInt)>>(
-          'FT_Set_Pixel_Sizes');
-  late final _Set_Pixel_Sizes =
-      _Set_Pixel_SizesPtr.asFunction<int Function(FT_Face, int, int)>();
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_UInt)>>('FT_Set_Pixel_Sizes');
+  late final _Set_Pixel_Sizes = _Set_Pixel_SizesPtr.asFunction<int Function(FT_Face, int, int)>();
 
   int Load_Glyph(
     FT_Face face,
@@ -274,11 +240,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Load_GlyphPtr = _lookup<
-          ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_Int32)>>(
-      'FT_Load_Glyph');
-  late final _Load_Glyph =
-      _Load_GlyphPtr.asFunction<int Function(FT_Face, int, int)>();
+  late final _Load_GlyphPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_Int32)>>('FT_Load_Glyph');
+  late final _Load_Glyph = _Load_GlyphPtr.asFunction<int Function(FT_Face, int, int)>();
 
   int Load_Char(
     FT_Face face,
@@ -292,11 +256,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Load_CharPtr = _lookup<
-          ffi.NativeFunction<FT_Error Function(FT_Face, FT_ULong, FT_Int32)>>(
-      'FT_Load_Char');
-  late final _Load_Char =
-      _Load_CharPtr.asFunction<int Function(FT_Face, int, int)>();
+  late final _Load_CharPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_ULong, FT_Int32)>>('FT_Load_Char');
+  late final _Load_Char = _Load_CharPtr.asFunction<int Function(FT_Face, int, int)>();
 
   void Set_Transform(
     FT_Face face,
@@ -310,12 +272,11 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Set_TransformPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(FT_Face, ffi.Pointer<FT_Matrix>,
-              ffi.Pointer<FT_Vector>)>>('FT_Set_Transform');
-  late final _Set_Transform = _Set_TransformPtr.asFunction<
-      void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>();
+  late final _Set_TransformPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>>(
+          'FT_Set_Transform');
+  late final _Set_Transform =
+      _Set_TransformPtr.asFunction<void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>();
 
   void Get_Transform(
     FT_Face face,
@@ -329,12 +290,11 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_TransformPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(FT_Face, ffi.Pointer<FT_Matrix>,
-              ffi.Pointer<FT_Vector>)>>('FT_Get_Transform');
-  late final _Get_Transform = _Get_TransformPtr.asFunction<
-      void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>();
+  late final _Get_TransformPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>>(
+          'FT_Get_Transform');
+  late final _Get_Transform =
+      _Get_TransformPtr.asFunction<void Function(FT_Face, ffi.Pointer<FT_Matrix>, ffi.Pointer<FT_Vector>)>();
 
   int Render_Glyph(
     FT_GlyphSlot slot,
@@ -347,10 +307,8 @@ class FreetypeLibrary {
   }
 
   late final _Render_GlyphPtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_GlyphSlot, ffi.Int32)>>(
-          'FT_Render_Glyph');
-  late final _Render_Glyph =
-      _Render_GlyphPtr.asFunction<int Function(FT_GlyphSlot, int)>();
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_GlyphSlot, ffi.Int32)>>('FT_Render_Glyph');
+  late final _Render_Glyph = _Render_GlyphPtr.asFunction<int Function(FT_GlyphSlot, int)>();
 
   int Get_Kerning(
     FT_Face face,
@@ -368,12 +326,10 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_KerningPtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Face, FT_UInt, FT_UInt, FT_UInt,
-              ffi.Pointer<FT_Vector>)>>('FT_Get_Kerning');
-  late final _Get_Kerning = _Get_KerningPtr.asFunction<
-      int Function(FT_Face, int, int, int, ffi.Pointer<FT_Vector>)>();
+  late final _Get_KerningPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_UInt, FT_UInt, ffi.Pointer<FT_Vector>)>>(
+          'FT_Get_Kerning');
+  late final _Get_Kerning = _Get_KerningPtr.asFunction<int Function(FT_Face, int, int, int, ffi.Pointer<FT_Vector>)>();
 
   int Get_Track_Kerning(
     FT_Face face,
@@ -389,12 +345,11 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Track_KerningPtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Face, FT_Fixed, FT_Int,
-              ffi.Pointer<FT_Fixed>)>>('FT_Get_Track_Kerning');
-  late final _Get_Track_Kerning = _Get_Track_KerningPtr.asFunction<
-      int Function(FT_Face, int, int, ffi.Pointer<FT_Fixed>)>();
+  late final _Get_Track_KerningPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_Fixed, FT_Int, ffi.Pointer<FT_Fixed>)>>(
+          'FT_Get_Track_Kerning');
+  late final _Get_Track_Kerning =
+      _Get_Track_KerningPtr.asFunction<int Function(FT_Face, int, int, ffi.Pointer<FT_Fixed>)>();
 
   int Get_Glyph_Name(
     FT_Face face,
@@ -410,12 +365,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Glyph_NamePtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(
-              FT_Face, FT_UInt, FT_Pointer, FT_UInt)>>('FT_Get_Glyph_Name');
-  late final _Get_Glyph_Name = _Get_Glyph_NamePtr.asFunction<
-      int Function(FT_Face, int, FT_Pointer, int)>();
+  late final _Get_Glyph_NamePtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, FT_Pointer, FT_UInt)>>('FT_Get_Glyph_Name');
+  late final _Get_Glyph_Name = _Get_Glyph_NamePtr.asFunction<int Function(FT_Face, int, FT_Pointer, int)>();
 
   ffi.Pointer<ffi.Char> Get_Postscript_Name(
     FT_Face face,
@@ -426,10 +378,8 @@ class FreetypeLibrary {
   }
 
   late final _Get_Postscript_NamePtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(FT_Face)>>(
-          'FT_Get_Postscript_Name');
-  late final _Get_Postscript_Name = _Get_Postscript_NamePtr.asFunction<
-      ffi.Pointer<ffi.Char> Function(FT_Face)>();
+      _lookup<ffi.NativeFunction<ffi.Pointer<ffi.Char> Function(FT_Face)>>('FT_Get_Postscript_Name');
+  late final _Get_Postscript_Name = _Get_Postscript_NamePtr.asFunction<ffi.Pointer<ffi.Char> Function(FT_Face)>();
 
   int Select_Charmap(
     FT_Face face,
@@ -442,10 +392,8 @@ class FreetypeLibrary {
   }
 
   late final _Select_CharmapPtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, ffi.Int32)>>(
-          'FT_Select_Charmap');
-  late final _Select_Charmap =
-      _Select_CharmapPtr.asFunction<int Function(FT_Face, int)>();
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, ffi.Int32)>>('FT_Select_Charmap');
+  late final _Select_Charmap = _Select_CharmapPtr.asFunction<int Function(FT_Face, int)>();
 
   int Set_Charmap(
     FT_Face face,
@@ -457,11 +405,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Set_CharmapPtr =
-      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_CharMap)>>(
-          'FT_Set_Charmap');
-  late final _Set_Charmap =
-      _Set_CharmapPtr.asFunction<int Function(FT_Face, FT_CharMap)>();
+  late final _Set_CharmapPtr = _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_CharMap)>>('FT_Set_Charmap');
+  late final _Set_Charmap = _Set_CharmapPtr.asFunction<int Function(FT_Face, FT_CharMap)>();
 
   int Get_Charmap_Index(
     FT_CharMap charmap,
@@ -471,11 +416,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Charmap_IndexPtr =
-      _lookup<ffi.NativeFunction<FT_Int Function(FT_CharMap)>>(
-          'FT_Get_Charmap_Index');
-  late final _Get_Charmap_Index =
-      _Get_Charmap_IndexPtr.asFunction<int Function(FT_CharMap)>();
+  late final _Get_Charmap_IndexPtr = _lookup<ffi.NativeFunction<FT_Int Function(FT_CharMap)>>('FT_Get_Charmap_Index');
+  late final _Get_Charmap_Index = _Get_Charmap_IndexPtr.asFunction<int Function(FT_CharMap)>();
 
   int Get_Char_Index(
     FT_Face face,
@@ -487,11 +429,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Char_IndexPtr =
-      _lookup<ffi.NativeFunction<FT_UInt Function(FT_Face, FT_ULong)>>(
-          'FT_Get_Char_Index');
-  late final _Get_Char_Index =
-      _Get_Char_IndexPtr.asFunction<int Function(FT_Face, int)>();
+  late final _Get_Char_IndexPtr = _lookup<ffi.NativeFunction<FT_UInt Function(FT_Face, FT_ULong)>>('FT_Get_Char_Index');
+  late final _Get_Char_Index = _Get_Char_IndexPtr.asFunction<int Function(FT_Face, int)>();
 
   int Get_First_Char(
     FT_Face face,
@@ -503,11 +442,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_First_CharPtr = _lookup<
-          ffi.NativeFunction<FT_ULong Function(FT_Face, ffi.Pointer<FT_UInt>)>>(
-      'FT_Get_First_Char');
-  late final _Get_First_Char = _Get_First_CharPtr.asFunction<
-      int Function(FT_Face, ffi.Pointer<FT_UInt>)>();
+  late final _Get_First_CharPtr =
+      _lookup<ffi.NativeFunction<FT_ULong Function(FT_Face, ffi.Pointer<FT_UInt>)>>('FT_Get_First_Char');
+  late final _Get_First_Char = _Get_First_CharPtr.asFunction<int Function(FT_Face, ffi.Pointer<FT_UInt>)>();
 
   int Get_Next_Char(
     FT_Face face,
@@ -521,12 +458,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Next_CharPtr = _lookup<
-      ffi.NativeFunction<
-          FT_ULong Function(
-              FT_Face, FT_ULong, ffi.Pointer<FT_UInt>)>>('FT_Get_Next_Char');
-  late final _Get_Next_Char = _Get_Next_CharPtr.asFunction<
-      int Function(FT_Face, int, ffi.Pointer<FT_UInt>)>();
+  late final _Get_Next_CharPtr =
+      _lookup<ffi.NativeFunction<FT_ULong Function(FT_Face, FT_ULong, ffi.Pointer<FT_UInt>)>>('FT_Get_Next_Char');
+  late final _Get_Next_Char = _Get_Next_CharPtr.asFunction<int Function(FT_Face, int, ffi.Pointer<FT_UInt>)>();
 
   int Face_Properties(
     FT_Face face,
@@ -540,12 +474,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Face_PropertiesPtr = _lookup<
-      ffi.NativeFunction<
-          FT_Error Function(FT_Face, FT_UInt,
-              ffi.Pointer<FT_Parameter>)>>('FT_Face_Properties');
-  late final _Face_Properties = _Face_PropertiesPtr.asFunction<
-      int Function(FT_Face, int, ffi.Pointer<FT_Parameter>)>();
+  late final _Face_PropertiesPtr =
+      _lookup<ffi.NativeFunction<FT_Error Function(FT_Face, FT_UInt, ffi.Pointer<FT_Parameter>)>>('FT_Face_Properties');
+  late final _Face_Properties = _Face_PropertiesPtr.asFunction<int Function(FT_Face, int, ffi.Pointer<FT_Parameter>)>();
 
   int Get_Name_Index(
     FT_Face face,
@@ -557,12 +488,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_Name_IndexPtr = _lookup<
-      ffi.NativeFunction<
-          FT_UInt Function(
-              FT_Face, ffi.Pointer<FT_String>)>>('FT_Get_Name_Index');
-  late final _Get_Name_Index = _Get_Name_IndexPtr.asFunction<
-      int Function(FT_Face, ffi.Pointer<FT_String>)>();
+  late final _Get_Name_IndexPtr =
+      _lookup<ffi.NativeFunction<FT_UInt Function(FT_Face, ffi.Pointer<FT_String>)>>('FT_Get_Name_Index');
+  late final _Get_Name_Index = _Get_Name_IndexPtr.asFunction<int Function(FT_Face, ffi.Pointer<FT_String>)>();
 
   int Get_SubGlyph_Info(
     FT_GlyphSlot glyph,
@@ -586,17 +514,11 @@ class FreetypeLibrary {
 
   late final _Get_SubGlyph_InfoPtr = _lookup<
       ffi.NativeFunction<
-          FT_Error Function(
-              FT_GlyphSlot,
-              FT_UInt,
-              ffi.Pointer<FT_Int>,
-              ffi.Pointer<FT_UInt>,
-              ffi.Pointer<FT_Int>,
-              ffi.Pointer<FT_Int>,
-              ffi.Pointer<FT_Matrix>)>>('FT_Get_SubGlyph_Info');
+          FT_Error Function(FT_GlyphSlot, FT_UInt, ffi.Pointer<FT_Int>, ffi.Pointer<FT_UInt>, ffi.Pointer<FT_Int>,
+              ffi.Pointer<FT_Int>, ffi.Pointer<FT_Matrix>)>>('FT_Get_SubGlyph_Info');
   late final _Get_SubGlyph_Info = _Get_SubGlyph_InfoPtr.asFunction<
-      int Function(FT_GlyphSlot, int, ffi.Pointer<FT_Int>, ffi.Pointer<FT_UInt>,
-          ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Matrix>)>();
+      int Function(FT_GlyphSlot, int, ffi.Pointer<FT_Int>, ffi.Pointer<FT_UInt>, ffi.Pointer<FT_Int>,
+          ffi.Pointer<FT_Int>, ffi.Pointer<FT_Matrix>)>();
 
   int Get_FSType_Flags(
     FT_Face face,
@@ -606,11 +528,8 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Get_FSType_FlagsPtr =
-      _lookup<ffi.NativeFunction<FT_UShort Function(FT_Face)>>(
-          'FT_Get_FSType_Flags');
-  late final _Get_FSType_Flags =
-      _Get_FSType_FlagsPtr.asFunction<int Function(FT_Face)>();
+  late final _Get_FSType_FlagsPtr = _lookup<ffi.NativeFunction<FT_UShort Function(FT_Face)>>('FT_Get_FSType_Flags');
+  late final _Get_FSType_Flags = _Get_FSType_FlagsPtr.asFunction<int Function(FT_Face)>();
 
   int Face_GetCharVariantIndex(
     FT_Face face,
@@ -624,11 +543,9 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Face_GetCharVariantIndexPtr = _lookup<
-          ffi.NativeFunction<FT_UInt Function(FT_Face, FT_ULong, FT_ULong)>>(
-      'FT_Face_GetCharVariantIndex');
-  late final _Face_GetCharVariantIndex = _Face_GetCharVariantIndexPtr
-      .asFunction<int Function(FT_Face, int, int)>();
+  late final _Face_GetCharVariantIndexPtr =
+      _lookup<ffi.NativeFunction<FT_UInt Function(FT_Face, FT_ULong, FT_ULong)>>('FT_Face_GetCharVariantIndex');
+  late final _Face_GetCharVariantIndex = _Face_GetCharVariantIndexPtr.asFunction<int Function(FT_Face, int, int)>();
 
   int Face_GetCharVariantIsDefault(
     FT_Face face,
@@ -643,10 +560,9 @@ class FreetypeLibrary {
   }
 
   late final _Face_GetCharVariantIsDefaultPtr =
-      _lookup<ffi.NativeFunction<FT_Int Function(FT_Face, FT_ULong, FT_ULong)>>(
-          'FT_Face_GetCharVariantIsDefault');
-  late final _Face_GetCharVariantIsDefault = _Face_GetCharVariantIsDefaultPtr
-      .asFunction<int Function(FT_Face, int, int)>();
+      _lookup<ffi.NativeFunction<FT_Int Function(FT_Face, FT_ULong, FT_ULong)>>('FT_Face_GetCharVariantIsDefault');
+  late final _Face_GetCharVariantIsDefault =
+      _Face_GetCharVariantIsDefaultPtr.asFunction<int Function(FT_Face, int, int)>();
 
   ffi.Pointer<FT_UInt32> Face_GetVariantSelectors(
     FT_Face face,
@@ -657,10 +573,9 @@ class FreetypeLibrary {
   }
 
   late final _Face_GetVariantSelectorsPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<FT_UInt32> Function(FT_Face)>>(
-          'FT_Face_GetVariantSelectors');
-  late final _Face_GetVariantSelectors = _Face_GetVariantSelectorsPtr
-      .asFunction<ffi.Pointer<FT_UInt32> Function(FT_Face)>();
+      _lookup<ffi.NativeFunction<ffi.Pointer<FT_UInt32> Function(FT_Face)>>('FT_Face_GetVariantSelectors');
+  late final _Face_GetVariantSelectors =
+      _Face_GetVariantSelectorsPtr.asFunction<ffi.Pointer<FT_UInt32> Function(FT_Face)>();
 
   ffi.Pointer<FT_UInt32> Face_GetVariantsOfChar(
     FT_Face face,
@@ -672,12 +587,10 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Face_GetVariantsOfCharPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<FT_UInt32> Function(
-              FT_Face, FT_ULong)>>('FT_Face_GetVariantsOfChar');
-  late final _Face_GetVariantsOfChar = _Face_GetVariantsOfCharPtr.asFunction<
-      ffi.Pointer<FT_UInt32> Function(FT_Face, int)>();
+  late final _Face_GetVariantsOfCharPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FT_UInt32> Function(FT_Face, FT_ULong)>>('FT_Face_GetVariantsOfChar');
+  late final _Face_GetVariantsOfChar =
+      _Face_GetVariantsOfCharPtr.asFunction<ffi.Pointer<FT_UInt32> Function(FT_Face, int)>();
 
   ffi.Pointer<FT_UInt32> Face_GetCharsOfVariant(
     FT_Face face,
@@ -689,12 +602,10 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Face_GetCharsOfVariantPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Pointer<FT_UInt32> Function(
-              FT_Face, FT_ULong)>>('FT_Face_GetCharsOfVariant');
-  late final _Face_GetCharsOfVariant = _Face_GetCharsOfVariantPtr.asFunction<
-      ffi.Pointer<FT_UInt32> Function(FT_Face, int)>();
+  late final _Face_GetCharsOfVariantPtr =
+      _lookup<ffi.NativeFunction<ffi.Pointer<FT_UInt32> Function(FT_Face, FT_ULong)>>('FT_Face_GetCharsOfVariant');
+  late final _Face_GetCharsOfVariant =
+      _Face_GetCharsOfVariantPtr.asFunction<ffi.Pointer<FT_UInt32> Function(FT_Face, int)>();
 
   int MulDiv(
     int a,
@@ -708,9 +619,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _MulDivPtr =
-      _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long, FT_Long)>>(
-          'FT_MulDiv');
+  late final _MulDivPtr = _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long, FT_Long)>>('FT_MulDiv');
   late final _MulDiv = _MulDivPtr.asFunction<int Function(int, int, int)>();
 
   int MulFix(
@@ -723,9 +632,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _MulFixPtr =
-      _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long)>>(
-          'FT_MulFix');
+  late final _MulFixPtr = _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long)>>('FT_MulFix');
   late final _MulFix = _MulFixPtr.asFunction<int Function(int, int)>();
 
   int DivFix(
@@ -738,9 +645,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _DivFixPtr =
-      _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long)>>(
-          'FT_DivFix');
+  late final _DivFixPtr = _lookup<ffi.NativeFunction<FT_Long Function(FT_Long, FT_Long)>>('FT_DivFix');
   late final _DivFix = _DivFixPtr.asFunction<int Function(int, int)>();
 
   int RoundFix(
@@ -751,8 +656,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _RoundFixPtr =
-      _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_RoundFix');
+  late final _RoundFixPtr = _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_RoundFix');
   late final _RoundFix = _RoundFixPtr.asFunction<int Function(int)>();
 
   int CeilFix(
@@ -763,8 +667,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _CeilFixPtr =
-      _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_CeilFix');
+  late final _CeilFixPtr = _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_CeilFix');
   late final _CeilFix = _CeilFixPtr.asFunction<int Function(int)>();
 
   int FloorFix(
@@ -775,8 +678,7 @@ class FreetypeLibrary {
     );
   }
 
-  late final _FloorFixPtr =
-      _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_FloorFix');
+  late final _FloorFixPtr = _lookup<ffi.NativeFunction<FT_Fixed Function(FT_Fixed)>>('FT_FloorFix');
   late final _FloorFix = _FloorFixPtr.asFunction<int Function(int)>();
 
   void Vector_Transform(
@@ -789,12 +691,11 @@ class FreetypeLibrary {
     );
   }
 
-  late final _Vector_TransformPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Pointer<FT_Vector>,
-              ffi.Pointer<FT_Matrix>)>>('FT_Vector_Transform');
-  late final _Vector_Transform = _Vector_TransformPtr.asFunction<
-      void Function(ffi.Pointer<FT_Vector>, ffi.Pointer<FT_Matrix>)>();
+  late final _Vector_TransformPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<FT_Vector>, ffi.Pointer<FT_Matrix>)>>(
+          'FT_Vector_Transform');
+  late final _Vector_Transform =
+      _Vector_TransformPtr.asFunction<void Function(ffi.Pointer<FT_Vector>, ffi.Pointer<FT_Matrix>)>();
 
   void Library_Version(
     FT_Library library1,
@@ -812,11 +713,10 @@ class FreetypeLibrary {
 
   late final _Library_VersionPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Void Function(FT_Library, ffi.Pointer<FT_Int>,
-              ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>)>>('FT_Library_Version');
+          ffi.Void Function(
+              FT_Library, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>)>>('FT_Library_Version');
   late final _Library_Version = _Library_VersionPtr.asFunction<
-      void Function(FT_Library, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>,
-          ffi.Pointer<FT_Int>)>();
+      void Function(FT_Library, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>, ffi.Pointer<FT_Int>)>();
 
   int Face_CheckTrueTypePatents(
     FT_Face face,
@@ -827,10 +727,8 @@ class FreetypeLibrary {
   }
 
   late final _Face_CheckTrueTypePatentsPtr =
-      _lookup<ffi.NativeFunction<FT_Bool Function(FT_Face)>>(
-          'FT_Face_CheckTrueTypePatents');
-  late final _Face_CheckTrueTypePatents =
-      _Face_CheckTrueTypePatentsPtr.asFunction<int Function(FT_Face)>();
+      _lookup<ffi.NativeFunction<FT_Bool Function(FT_Face)>>('FT_Face_CheckTrueTypePatents');
+  late final _Face_CheckTrueTypePatents = _Face_CheckTrueTypePatentsPtr.asFunction<int Function(FT_Face)>();
 
   int Face_SetUnpatentedHinting(
     FT_Face face,
@@ -843,10 +741,8 @@ class FreetypeLibrary {
   }
 
   late final _Face_SetUnpatentedHintingPtr =
-      _lookup<ffi.NativeFunction<FT_Bool Function(FT_Face, FT_Bool)>>(
-          'FT_Face_SetUnpatentedHinting');
-  late final _Face_SetUnpatentedHinting =
-      _Face_SetUnpatentedHintingPtr.asFunction<int Function(FT_Face, int)>();
+      _lookup<ffi.NativeFunction<FT_Bool Function(FT_Face, FT_Bool)>>('FT_Face_SetUnpatentedHinting');
+  late final _Face_SetUnpatentedHinting = _Face_SetUnpatentedHintingPtr.asFunction<int Function(FT_Face, int)>();
 }
 
 final class FT_MemoryRec_ extends ffi.Struct {
@@ -859,17 +755,15 @@ final class FT_MemoryRec_ extends ffi.Struct {
   external FT_Realloc_Func realloc;
 }
 
-typedef FT_Alloc_Func = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Pointer<ffi.Void> Function(FT_Memory memory, ffi.Long size)>>;
+typedef FT_Alloc_Func
+    = ffi.Pointer<ffi.NativeFunction<ffi.Pointer<ffi.Void> Function(FT_Memory memory, ffi.Long size)>>;
 typedef FT_Memory = ffi.Pointer<FT_MemoryRec_>;
-typedef FT_Free_Func = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(FT_Memory memory, ffi.Pointer<ffi.Void> block)>>;
+typedef FT_Free_Func
+    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(FT_Memory memory, ffi.Pointer<ffi.Void> block)>>;
 typedef FT_Realloc_Func = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.Pointer<ffi.Void> Function(FT_Memory memory, ffi.Long cur_size,
-            ffi.Long new_size, ffi.Pointer<ffi.Void> block)>>;
+        ffi.Pointer<ffi.Void> Function(
+            FT_Memory memory, ffi.Long cur_size, ffi.Long new_size, ffi.Pointer<ffi.Void> block)>>;
 
 final class FT_StreamRec_ extends ffi.Struct {
   external ffi.Pointer<ffi.UnsignedChar> base;
@@ -906,11 +800,10 @@ final class FT_StreamDesc_ extends ffi.Union {
 
 typedef FT_Stream_IoFunc = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.UnsignedLong Function(FT_Stream stream, ffi.UnsignedLong offset,
-            ffi.Pointer<ffi.UnsignedChar> buffer, ffi.UnsignedLong count)>>;
+        ffi.UnsignedLong Function(
+            FT_Stream stream, ffi.UnsignedLong offset, ffi.Pointer<ffi.UnsignedChar> buffer, ffi.UnsignedLong count)>>;
 typedef FT_Stream = ffi.Pointer<FT_StreamRec_>;
-typedef FT_Stream_CloseFunc
-    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(FT_Stream stream)>>;
+typedef FT_Stream_CloseFunc = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(FT_Stream stream)>>;
 
 final class FT_Vector_ extends ffi.Struct {
   @FT_Pos()
@@ -1007,24 +900,16 @@ final class FT_Outline_Funcs_ extends ffi.Struct {
   external int delta;
 }
 
-typedef FT_Outline_MoveToFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(
-            ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
-typedef FT_Outline_LineToFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(
-            ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
+typedef FT_Outline_MoveToFunc
+    = ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
+typedef FT_Outline_LineToFunc
+    = ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
 typedef FT_Outline_ConicToFunc = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.Int Function(ffi.Pointer<FT_Vector> control,
-            ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
+        ffi.Int Function(ffi.Pointer<FT_Vector> control, ffi.Pointer<FT_Vector> to, ffi.Pointer<ffi.Void> user)>>;
 typedef FT_Outline_CubicToFunc = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.Int Function(
-            ffi.Pointer<FT_Vector> control1,
-            ffi.Pointer<FT_Vector> control2,
-            ffi.Pointer<FT_Vector> to,
+        ffi.Int Function(ffi.Pointer<FT_Vector> control1, ffi.Pointer<FT_Vector> control2, ffi.Pointer<FT_Vector> to,
             ffi.Pointer<ffi.Void> user)>>;
 
 abstract class FT_Glyph_Format_ {
@@ -1071,15 +956,12 @@ final class FT_Raster_Params_ extends ffi.Struct {
 typedef FT_Bitmap = FT_Bitmap_;
 typedef FT_SpanFunc = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.Void Function(ffi.Int y, ffi.Int count, ffi.Pointer<FT_Span> spans,
-            ffi.Pointer<ffi.Void> user)>>;
+        ffi.Void Function(ffi.Int y, ffi.Int count, ffi.Pointer<FT_Span> spans, ffi.Pointer<ffi.Void> user)>>;
 typedef FT_Span = FT_Span_;
-typedef FT_Raster_BitTest_Func = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(ffi.Int y, ffi.Int x, ffi.Pointer<ffi.Void> user)>>;
-typedef FT_Raster_BitSet_Func = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Void Function(ffi.Int y, ffi.Int x, ffi.Pointer<ffi.Void> user)>>;
+typedef FT_Raster_BitTest_Func
+    = ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Int y, ffi.Int x, ffi.Pointer<ffi.Void> user)>>;
+typedef FT_Raster_BitSet_Func
+    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Int y, ffi.Int x, ffi.Pointer<ffi.Void> user)>>;
 typedef FT_BBox = FT_BBox_;
 
 final class FT_RasterRec_ extends ffi.Opaque {}
@@ -1099,28 +981,18 @@ final class FT_Raster_Funcs_ extends ffi.Struct {
   external FT_Raster_DoneFunc raster_done;
 }
 
-typedef FT_Raster_NewFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(
-            ffi.Pointer<ffi.Void> memory, ffi.Pointer<FT_Raster> raster)>>;
+typedef FT_Raster_NewFunc
+    = ffi.Pointer<ffi.NativeFunction<ffi.Int Function(ffi.Pointer<ffi.Void> memory, ffi.Pointer<FT_Raster> raster)>>;
 typedef FT_Raster = ffi.Pointer<FT_RasterRec_>;
 typedef FT_Raster_ResetFunc = ffi.Pointer<
     ffi.NativeFunction<
-        ffi.Void Function(
-            FT_Raster raster,
-            ffi.Pointer<ffi.UnsignedChar> pool_base,
-            ffi.UnsignedLong pool_size)>>;
-typedef FT_Raster_SetModeFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(FT_Raster raster, ffi.UnsignedLong mode,
-            ffi.Pointer<ffi.Void> args)>>;
-typedef FT_Raster_RenderFunc = ffi.Pointer<
-    ffi.NativeFunction<
-        ffi.Int Function(
-            FT_Raster raster, ffi.Pointer<FT_Raster_Params> params)>>;
+        ffi.Void Function(FT_Raster raster, ffi.Pointer<ffi.UnsignedChar> pool_base, ffi.UnsignedLong pool_size)>>;
+typedef FT_Raster_SetModeFunc = ffi
+    .Pointer<ffi.NativeFunction<ffi.Int Function(FT_Raster raster, ffi.UnsignedLong mode, ffi.Pointer<ffi.Void> args)>>;
+typedef FT_Raster_RenderFunc
+    = ffi.Pointer<ffi.NativeFunction<ffi.Int Function(FT_Raster raster, ffi.Pointer<FT_Raster_Params> params)>>;
 typedef FT_Raster_Params = FT_Raster_Params_;
-typedef FT_Raster_DoneFunc
-    = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(FT_Raster raster)>>;
+typedef FT_Raster_DoneFunc = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(FT_Raster raster)>>;
 
 final class FT_UnitVector_ extends ffi.Struct {
   @FT_F2Dot14()
@@ -1164,8 +1036,7 @@ final class FT_Generic_ extends ffi.Struct {
   external FT_Generic_Finalizer finalizer;
 }
 
-typedef FT_Generic_Finalizer = ffi.Pointer<
-    ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> object)>>;
+typedef FT_Generic_Finalizer = ffi.Pointer<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void> object)>>;
 
 final class FT_ListNodeRec_ extends ffi.Struct {
   external FT_ListNode prev;

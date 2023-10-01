@@ -20,11 +20,12 @@ class TextStyle {
   final Color? color;
   final String? fontFamily;
   final bool bold, italic;
+  final double scale;
 
-  const TextStyle({this.color, this.fontFamily, this.bold = false, this.italic = false});
+  const TextStyle({this.color, this.fontFamily, this.bold = false, this.italic = false, this.scale = 1});
 }
 
-typedef FontLookup = FontFamily Function(String?);
+typedef FontLookup = FontFamily Function(String? fontFamily);
 
 class Text {
   final List<StyledString> _segments;
@@ -47,25 +48,21 @@ class Text {
   void shape(FontLookup fontLookup) {
     int cursorX = 0, cursorY = 0;
 
-    final featureFlag = "calt on".toNativeUtf8().cast<Char>();
-    final language = "en".toNativeUtf8().cast<Char>();
+    final features = malloc<hb_feature>();
+    "calt on".withAsNative((flag) => harfbuzz.feature_from_string(flag.cast(), -1, features));
 
     for (final segment in _segments) {
       final segmentFont = fontLookup(segment.style.fontFamily);
 
-      final hbFeatures = malloc<hb_feature>();
-      harfbuzz.feature_from_string(featureFlag, -1, hbFeatures);
-
       final buffer = harfbuzz.buffer_create();
-      String.fromCharCodes(logicalToVisual(segment.content))
-          .withAsNative((reordered) => harfbuzz.buffer_add_utf8(buffer, reordered.cast(), -1, 0, -1));
 
-      harfbuzz.buffer_set_direction(buffer, hb_direction.HB_DIRECTION_LTR);
-      harfbuzz.buffer_set_script(buffer, hb_script.HB_SCRIPT_LATIN);
-      harfbuzz.buffer_set_language(buffer, harfbuzz.language_from_string(language, -1));
+      final bufferContent = String.fromCharCodes(logicalToVisual(segment.content)).toNativeUtf16();
+      harfbuzz.buffer_add_utf16(buffer, bufferContent.cast(), -1, 0, -1);
+      malloc.free(bufferContent);
+
+      harfbuzz.buffer_guess_segment_properties(buffer);
       harfbuzz.buffer_set_cluster_level(buffer, hb_buffer_cluster_level.HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS);
-      harfbuzz.shape(segmentFont.fontForStyle(segment.style).hbFont, buffer, hbFeatures, 1);
-      malloc.free(hbFeatures);
+      harfbuzz.shape(segmentFont.fontForStyle(segment.style).hbFont, buffer, features, 1);
 
       final glpyhCount = malloc<UnsignedInt>();
       final glyphInfo = harfbuzz.buffer_get_glyph_infos(buffer, glpyhCount);
@@ -79,8 +76,8 @@ class Text {
           segmentFont.fontForStyle(segment.style),
           glyphInfo[i].codepoint,
           Vector2(
-            cursorX + glyphPos[i].x_offset.toDouble(),
-            cursorY + glyphPos[i].y_offset.toDouble(),
+            cursorX + glyphPos[i].x_offset.toDouble() * segment.style.scale,
+            cursorY + glyphPos[i].y_offset.toDouble() * segment.style.scale,
           ),
           Vector2(
             glyphPos[i].x_advance.toDouble(),
@@ -90,13 +87,14 @@ class Text {
           glyphInfo[i].cluster,
         ));
 
-        cursorX += glyphPos[i].x_advance;
-        cursorY += glyphPos[i].y_advance;
+        cursorX += (glyphPos[i].x_advance * segment.style.scale).round();
+        cursorY += (glyphPos[i].y_advance * segment.style.scale).round();
       }
 
       harfbuzz.buffer_destroy(buffer);
     }
 
+    malloc.free(features);
     _isShaped = true;
   }
 }

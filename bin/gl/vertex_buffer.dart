@@ -14,7 +14,7 @@ class MeshBuffer<VF extends Function> {
   final GlVertexBuffer _vbo = GlVertexBuffer();
   final GlVertexArray _vao = GlVertexArray();
 
-  final BufferBuilder _buffer;
+  final BufferWriter _buffer;
   final VertexDescriptor _descriptor;
 
   final GlProgram program;
@@ -22,7 +22,7 @@ class MeshBuffer<VF extends Function> {
 
   MeshBuffer(VertexDescriptor<VF> descriptor, this.program, {int initialBufferSize = 1024})
       : _descriptor = descriptor,
-        _buffer = BufferBuilder(initialBufferSize) {
+        _buffer = BufferWriter(initialBufferSize) {
     _vbo.bind();
     _vao.bind();
 
@@ -71,7 +71,7 @@ class GlVertexBuffer {
     gl.bindBuffer(glArrayBuffer, 0);
   }
 
-  void upload(BufferBuilder data, {bool dynamic = false}) {
+  void upload(BufferWriter data, {bool dynamic = false}) {
     final bytes = data._data.buffer.asUint8List();
 
     final buffer = malloc<Uint8>(data._cursor);
@@ -130,14 +130,14 @@ class GlVertexArray {
   }
 }
 
-class BufferBuilder {
-  static final Logger _logger = Logger("cutesy.buffer_builder");
+class BufferWriter {
+  static final Logger _logger = Logger("cutesy.buffer_writer");
   static const int _float32Size = 4;
 
   ByteData _data;
   int _cursor = 0;
 
-  BufferBuilder([int initialSize = 64]) : _data = ByteData(initialSize);
+  BufferWriter([int initialSize = 64]) : _data = ByteData(initialSize);
 
   void vec3(Vector3 vec) => float3(vec.x, vec.y, vec.z);
   void float3(double a, double b, double c) {
@@ -172,7 +172,8 @@ class BufferBuilder {
     if (_cursor + bytes <= _data.lengthInBytes) return;
 
     _logger.fine(
-        "Growing BufferBuilder $hashCode from ${_data.lengthInBytes} to ${_data.lengthInBytes * 2} bytes to fit ${_cursor + bytes}");
+      "Growing BufferWriter $hashCode from ${_data.lengthInBytes} to ${_data.lengthInBytes * 2} bytes to fit ${_cursor + bytes}",
+    );
 
     final newData = ByteData(_data.lengthInBytes * 2);
     newData.buffer.asUint8List().setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());

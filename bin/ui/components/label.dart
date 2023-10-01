@@ -7,39 +7,39 @@ import '../math.dart';
 import '../sizing.dart';
 
 class Label extends Component {
-  Text _text;
+  final Observable<Text> _text;
   Size? _textSizeCache;
 
-  final AnimatableProperty<Color> color = AnimatableProperty.create(Color.white);
-  final Observable<int> maxWidth = Observable.create(-1);
+  final AnimatableProperty<Color> color = Color.white.animatable;
+  final Observable<int> maxWidth = (-1).observable;
 
   VerticalAlignment verticalTextAlignment = VerticalAlignment.top;
   HorizontalAlignment horizontalTextAlignment = HorizontalAlignment.left;
-  double scale = 1;
+  double size = 30;
 
-  Label(this._text);
+  Label(Text text) : _text = text.observable {
+    _text.observe((value) {
+      _textSizeCache = null;
+      notifyParentIfMounted();
+    });
+  }
 
   @override
-  int determineHorizontalContentSize(Sizing sizing) => _textSize!.width + 2;
+  int determineHorizontalContentSize(Sizing sizing) => _textSize!.width;
 
   @override
-  int determineVerticalContentSize(Sizing sizing) => _textSize!.height + 2;
+  int determineVerticalContentSize(Sizing sizing) => _textSize!.height;
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
     final xOffset = horizontalTextAlignment.align(_textSize!.width, width);
     final yOffset = verticalTextAlignment.align(_textSize!.height, height);
 
-    context.textRenderer
-        .drawText(x + xOffset, y + yOffset, _text, context.projection, color: color.value, scale: scale);
+    context.textRenderer.drawText(x + xOffset, y + yOffset, _text.value, size, context.projection, color: color.value);
   }
 
-  Size? get _textSize => _textSizeCache ??= layoutContext?.textRenderer.sizeOf(text, scale: scale);
+  Size? get _textSize => _textSizeCache ??= layoutContext?.textRenderer.sizeOf(text, size);
 
-  Text get text => _text;
-
-  set text(Text text) {
-    _text = text;
-    _textSizeCache = null;
-  }
+  Text get text => _text.value;
+  set text(Text text) => _text(text);
 }

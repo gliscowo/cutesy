@@ -1,10 +1,10 @@
 import 'dart:ffi' as ffi;
 import 'dart:io';
-import 'dart:math';
 
 import 'package:dart_glfw/dart_glfw.dart';
 import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart' as ffi;
+import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
@@ -12,19 +12,20 @@ import 'color.dart';
 import 'context.dart';
 import 'gl/debug.dart';
 import 'gl/shader.dart';
-import 'gl/vertex_buffer.dart';
-import 'gl/vertex_descriptor.dart';
 import 'primitive_renderer.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
+import 'ui/animation.dart';
 import 'ui/component.dart';
 import 'ui/components/button.dart';
 import 'ui/components/label.dart';
+import 'ui/components/metrics.dart';
 import 'ui/components/slider.dart';
 import 'ui/components/text_field.dart';
 import 'ui/containers/flow_layout.dart';
 import 'ui/insets.dart';
 import 'ui/inspector.dart';
+import 'ui/positioning.dart';
 import 'ui/sizing.dart';
 import 'ui/surface.dart';
 import 'ui/ui_controller.dart';
@@ -55,7 +56,7 @@ void main(List<String> args) {
 
   glfw.setErrorCallback(ffi.Pointer.fromFunction<GLFWerrorfun>(onGlfwError));
 
-  _window = Window(800, 450, "cutesy", debug: true);
+  _window = Window(1000, 550, "cutesy", debug: true);
 
   glfw.makeContextCurrent(_window.handle);
   attachGlErrorCallback();
@@ -68,7 +69,8 @@ void main(List<String> args) {
   });
 
   final nunito = FontFamily("Nunito", 30);
-  final cascadia = FontFamily("CascadiaCode", 20);
+  final cascadia = FontFamily("CascadiaCode", 30);
+  final notoSans = FontFamily("NotoSans", 30);
 
   _window.onKey.where((event) => event.action == glfwPress).map((event) => event.key).listen((key) {
     if (key == glfwKeyEscape) _running = false;
@@ -85,12 +87,6 @@ void main(List<String> args) {
     _logger.info("got char: $char");
   });
 
-  double lastTime = glfw.getTime();
-  int frames = 0;
-  int lastFps = 0;
-  double passedTime = 0;
-  glfw.swapInterval(0);
-
   final renderContext = RenderContext(_window, [
     GlProgram.vertexFragment("hsv", "position", "hsv"),
     GlProgram.vertexFragment("pos_color", "position", "position"),
@@ -102,7 +98,11 @@ void main(List<String> args) {
   ]);
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
-  final textRenderer = TextRenderer(renderContext, nunito, {"Nunito": nunito, "CascadiaCode": cascadia});
+  final textRenderer = TextRenderer(renderContext, notoSans, {
+    "NotoSans": notoSans,
+    "Nunito": nunito,
+    "CascadiaCode": cascadia,
+  });
 
   final ui = UIController.ofWindow(
     _window,
@@ -112,70 +112,102 @@ void main(List<String> args) {
       ..verticalSizing(vertical),
   );
 
-  var showGraph = false;
-  var hue = 0.0, sat = 0.0, value = 0.0;
+  var metrics = Metrics()..positioning(Positioning.relative(0, 100));
+
+  final targetFps = 60.observable;
+  final opacity = 100.observable
+    ..observe((value) {
+      glfw.setWindowOpacity(_window.handle, value / 100);
+    });
 
   ui.root
     ..addChild(FlowLayout.horizontal()
-      ..addChild(Button(Text.string("Button", style: TextStyle(bold: true)), (p0) => _logger.info("button 1"))
-        ..id = "Button 1")
-      ..addChild(Button(Text.string("Button 2", style: TextStyle(bold: true)), (p0) {
-        _logger.info("button 2");
-        showGraph = !showGraph;
-      })
-        ..id = "Button 2")
+      ..addChild(Button(Text.string("Buttgon", style: TextStyle(bold: true)), (p0) => _logger.info("button 1")))
+      ..addChild(Button(Text.string("_______", style: TextStyle(bold: true)), (p0) {
+        if (metrics.hasParent) {
+          metrics.remove();
+        } else {
+          ui.root.addChild(metrics);
+        }
+      }))
       ..addChild(FlowLayout.vertical()
-        ..addChild(Label(Text.string("AAA"))
+        ..addChild(Label(Text.string("Label-time"))
           ..color(Color.black)
           ..verticalTextAlignment = VerticalAlignment.center
           ..horizontalTextAlignment = HorizontalAlignment.center
-          ..scale = .75)
+          ..size = 24)
+        ..addChild(Label(Text.string("AAAAAAAAA"))
+          ..color(Color.black)
+          ..verticalTextAlignment = VerticalAlignment.center
+          ..horizontalTextAlignment = HorizontalAlignment.center
+          ..size = 24)
         ..addChild(Button(Text.string("hmmm"), (_) {})))
       ..addChild(TextField()
-        ..id = "text-field"
-        ..verticalSizing(Sizing.fixed(50))
-        ..horizontalSizing(Sizing.fixed(750)))
+        ..verticalSizing(Sizing.fixed(30))
+        ..horizontalSizing(Sizing.fixed(350)))
       ..padding(Insets.all(10))
       ..gap(5)
       ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)))
-    ..addChild(FlowLayout.horizontal()
-      ..addChild(Label(Text.string("Hue")))
-      ..addChild(Slider()..listener = (p0) => hue = p0))
-    ..addChild(FlowLayout.horizontal()
-      ..addChild(Label(Text.string("Saturation")))
-      ..addChild(Slider()..listener = (p0) => sat = p0))
-    ..addChild(FlowLayout.horizontal()
-      ..addChild(Label(Text.string("Value")))
-      ..addChild(Slider()..listener = (p0) => value = p0))
+    ..addChild(FlowLayout.vertical()
+      ..addChild(Label(Text.string("FPS: ${targetFps.value}"))
+        ..size = 15
+        ..configure((label) => targetFps.observe((fps) => label.text = Text.string("FPS: $fps"))))
+      ..addChild(Slider()
+        ..progress = 30 / 300
+        ..listener = (p0) => targetFps(30 + (300 * p0).round()))
+      ..horizontalAlignment(HorizontalAlignment.center)
+      ..gap(5))
+    ..addChild(FlowLayout.vertical()
+      ..addChild(Label(Text.string("Opacity: ${opacity.value}%"))
+        ..size = 15
+        ..configure((label) => opacity.observe((opacity) => label.text = Text.string("Opacity: $opacity%"))))
+      ..addChild(Slider()
+        ..progress = 1
+        ..listener = (p0) => opacity((100 * p0).round()))
+      ..horizontalAlignment(HorizontalAlignment.center)
+      ..gap(5))
     ..gap(25)
     ..horizontalAlignment(HorizontalAlignment.center)
     ..verticalAlignment(VerticalAlignment.center);
 
   ui.inflateAndMount();
 
-  final frameMesh = MeshBuffer(posColorVertexDescriptor, renderContext.findProgram("pos_color"));
-  final fps = <int>[];
+  var lastTime = glfw.getTime();
+  var frames = 0;
+  var lastFps = 0;
+  var passedTime = 0.0;
+
+  glfw.swapInterval(0);
 
   while (_running && glfw.windowShouldClose(_window.handle) != glfwTrue) {
-    var clearColor = Color.ofHsv(hue, sat, value);
-
-    gl.clearColor(clearColor.r, clearColor.g, clearColor.b, 0);
+    gl.clearColor(.25, .25, .25, 0);
     gl.clear(glColorBufferBit);
     gl.enable(glBlend);
 
-    final delta = glfw.getTime() - lastTime;
+    var delta = glfw.getTime() - lastTime;
+    while (delta < 1 / targetFps.value) {
+      glfw.waitEventsTimeout(1 / targetFps.value - delta);
+      delta = glfw.getTime() - lastTime;
+    }
+
     lastTime = glfw.getTime();
 
-    textRenderer.drawText(5, 5, Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")), projection,
-        color: Color.black, scale: .75);
+    textRenderer.drawText(
+      5,
+      5,
+      Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")),
+      15,
+      projection,
+      color: Color.black,
+    );
 
     textRenderer.drawText(
       5,
       25,
       Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
+      15,
       projection,
       color: Color.black,
-      scale: .75,
     );
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
@@ -185,35 +217,10 @@ void main(List<String> args) {
       Inspector.drawInspector(drawContext, ui.root, _window.cursorX, _window.cursorY, true);
     }
 
-    if (showGraph) {
-      frameMesh.clear();
-      primitiveRenderer.buildRect(frameMesh.vertex, 0, _window.height - 100, 200, 1, Color.black);
-      for (var (idx, measure) in fps.indexed) {
-        final height = (1000 / measure) * 100;
-        primitiveRenderer.buildRect(frameMesh.vertex, idx.toDouble() * 2, _window.height - height, 2, height,
-            Color.red.interpolate(Color.green, min(1, measure / 1000)));
-      }
-
-      gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
-
-      frameMesh.program
-        ..use()
-        ..uniformMat4("uTransform", Matrix4.identity())
-        ..uniformMat4("uProjection", projection);
-
-      frameMesh
-        ..upload(dynamic: true)
-        ..draw();
-    }
-
     _window.nextFrame();
 
-    if (passedTime >= .1) {
-      fps.add(lastFps);
-      if (fps.length > 100) fps.removeAt(0);
-      lastFps = frames * 10;
-      // _logger.fine("${lastFps} FPS");
-
+    if (passedTime >= 1) {
+      lastFps = frames;
       frames = 0;
       passedTime = 0;
     }

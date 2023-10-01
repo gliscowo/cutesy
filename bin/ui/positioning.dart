@@ -10,7 +10,7 @@ class Positioning implements Animatable<Positioning> {
   const Positioning._(this.type, this.x, this.y);
 
   const Positioning.absolute(int xPixels, int yPixels) : this._(PositioningType.absolute, xPixels, yPixels);
-  const Positioning.relative(int xPixels, int yPixels) : this._(PositioningType.absolute, xPixels, yPixels);
+  const Positioning.relative(int xPercent, int yPercent) : this._(PositioningType.relative, xPercent, yPercent);
 
   Positioning copy({PositioningType? type, int? x, int? y}) =>
       Positioning._(type ?? this.type, x ?? this.x, y ?? this.y);

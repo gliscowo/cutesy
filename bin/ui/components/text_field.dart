@@ -16,12 +16,13 @@ class TextField extends Component {
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
-    context.primitives.roundedRect(
-      x.toDouble(),
-      y.toDouble(),
-      width.toDouble(),
-      height.toDouble(),
-      5,
+    final focused = focusHandler?.focused == this;
+
+    context.primitives.rect(
+      x.toDouble() + 2,
+      y.toDouble() + 2,
+      width.toDouble() - 4,
+      height.toDouble() - 4,
       Color.black,
       context.projection,
     );
@@ -32,69 +33,69 @@ class TextField extends Component {
       width.toDouble(),
       height.toDouble(),
       5,
-      focusHandler?.focused == this ? Color.ofRgb(0x828282) : Color.ofRgb(0x323232),
+      focused ? Color.ofRgb(0x828282) : Color.ofRgb(0x323232),
       context.projection,
-      outlineThickness: 1.5,
+      outlineThickness: 1,
     );
 
     final renderText = Text.string(_content, style: TextStyle(fontFamily: "CascadiaCode"));
-    final renderTextSize = context.textRenderer.sizeOf(renderText);
+    final renderTextSize = context.textRenderer.sizeOf(renderText, 15);
 
-    context.primitives.roundedRect(
-      x.toDouble() + 5 + renderTextSize.width + _cursorOffset(renderText),
-      y.toDouble() + 7,
-      2,
-      height.toDouble() - 14,
-      1,
-      Color.white.interpolate(Color(Vector4.zero()), sin(DateTime.now().millisecondsSinceEpoch * .005)),
-      context.projection,
-    );
+    if (focused) {
+      context.primitives.roundedRect(
+        x.toDouble() + 5 + _charIdxToClusterPos(renderText, _cursorPosition, 15),
+        y.toDouble() + 6,
+        1,
+        height.toDouble() - 12,
+        1,
+        Color.white.interpolate(Color(Vector4.zero()), sin(DateTime.now().millisecondsSinceEpoch * .005)),
+        context.projection,
+      );
+    }
 
     if (_content.isEmpty) return;
-
-    final fontSize = renderText.glyphs.first.font.size;
     context.textRenderer.drawText(
-        x + 5, y + (height - fontSize) ~/ 2 + (fontSize - renderTextSize.height), renderText, context.projection);
-
-    var clusters = Text.string("$_cursorPosition", style: TextStyle(fontFamily: "CascadiaCode"));
-    context.textRenderer.drawText(x + 5, y + 5 + height, clusters, context.projection, scale: .8);
+      x + 5,
+      y + (height - renderTextSize.height).round() ~/ 2,
+      renderText,
+      15,
+      context.projection,
+    );
   }
 
   @override
   void drawFocusHighlight(DrawContext context, int mouseX, int mouseY, double delta) {}
 
-  double _cursorOffset(Text text) {
-    if (text.glyphs.isEmpty) return 0;
-    double offset = 0;
+  @override
+  CursorStyle get cursorStyle => CursorStyle.text;
 
-    var remaining = -_cursorPosition;
+  double _charIdxToClusterPos(Text text, int charIdx, double size) {
+    if (text.glyphs.isEmpty || charIdx == 0) return 0;
+
+    var pos = 0.0;
     var glyphs = text.glyphs;
 
-    if (remaining > 0) {
-      offset -= glyphs.last.font[glyphs.last.index].width;
-      remaining--;
+    for (var glyphIdx = 0; glyphIdx < glyphs.length && glyphs[glyphIdx].cluster < charIdx; glyphIdx++) {
+      var glyph = glyphs[glyphIdx];
+      pos += (glyph.advance.x / 64) * (size / glyph.font.size);
     }
 
-    while (remaining > 0) {
-      var glyph = glyphs[glyphs.length - remaining];
-      offset -= (glyph.advance.x / 64) * glyph.font.size;
-      remaining--;
-    }
-
-    return offset;
+    return pos;
   }
 
   void _insert(String insertion) {
     final runes = _content.runes.toList();
-    runes.insertAll(runes.length + _cursorPosition, insertion.runes);
+    runes.insertAll(_cursorPosition, insertion.runes);
+
     _content = String.fromCharCodes(runes);
+    _cursorPosition += insertion.runes.length;
   }
 
   @override
   bool canFocus(FocusSource source) => true;
 
   @override
-  bool onCharTyped(String chr, int ruvmodifiers) {
+  bool onCharTyped(String chr, int modifiers) {
     _insert(chr);
     return true;
   }
@@ -105,17 +106,33 @@ class TextField extends Component {
       if (_content.isEmpty) return true;
 
       final runes = _content.runes.toList();
-      runes.removeAt(runes.length - 1 + _cursorPosition);
+      runes.removeAt(_cursorPosition - 1);
+      _cursorPosition--;
+
       _content = String.fromCharCodes(runes);
+      return true;
+    } else if (keyCode == glfwKeyDelete) {
+      if (_content.isEmpty) return true;
+
+      final runes = _content.runes.toList();
+      runes.removeAt(_cursorPosition);
+      _content = String.fromCharCodes(runes);
+
       return true;
     } else if (keyCode == glfwKeyV && (modifiers & glfwModControl) != 0) {
       _insert(glfw.getClipboardString(layoutContext!.window.handle).cast<Utf8>().toDartString());
       return true;
     } else if (keyCode == glfwKeyLeft) {
-      _cursorPosition = max(-_content.runes.length, _cursorPosition - 1);
+      _cursorPosition = max(0, _cursorPosition - 1);
       return true;
     } else if (keyCode == glfwKeyRight) {
-      _cursorPosition = min(0, _cursorPosition + 1);
+      _cursorPosition = min(_content.runes.length, _cursorPosition + 1);
+      return true;
+    } else if (keyCode == glfwKeyHome) {
+      _cursorPosition = 0;
+      return true;
+    } else if (keyCode == glfwKeyEnd) {
+      _cursorPosition = _content.runes.length;
       return true;
     } else {
       return false;

@@ -40,6 +40,10 @@ class UIController<R extends ParentComponent> {
       }
     });
 
+    _window.onMouseScroll.listen((event) {
+      _root.onMouseScroll(_window.cursorX, _window.cursorY, event);
+    });
+
     _window.onKey.where((event) => event.action == glfwPress || event.action == glfwRepeat).listen((event) {
       _root.onKeyPress(event.key, event.scancode, event.mods);
     });

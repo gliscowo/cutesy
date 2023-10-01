@@ -54,6 +54,9 @@ class Color implements Animatable<Color> {
     return hsv;
   }
 
+  Color copyWith({double? r, double? g, double? b, double? a}) =>
+      Color.rgb(r ?? this.r, g ?? this.g, b ?? this.b, a ?? this.a);
+
   Vector4 asVector() => Vector4.copy(_storage);
 
   String toHexString(bool alpha) {

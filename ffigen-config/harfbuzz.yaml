@@ -1,11 +1,14 @@
 output: '../bin/native/harfbuzz.dart'
 name: 'HarfbuzzLibrary'
 description: 'Generated bindings to the HarfBuzz text shaping library'
+compiler-opts:
+  - '-I/usr/include/freetype2/'
 llvm-path:
   - '/usr/lib/llvm-15/lib/libclang.so.1'
 headers:
   entry-points:
     - '/usr/include/harfbuzz/hb.h'
+    - '/usr/include/harfbuzz/hb-ft.h'
   include-directives:
     - '**hb-buffer.h'
     - '**hb-common.h'
@@ -13,6 +16,7 @@ headers:
     - '**hb-face.h'
     - '**hb-font.h'
     - '**hb-shape.h'
+    - '**hb-ft.h'
 comments: false
 structs:
   dependency-only: opaque

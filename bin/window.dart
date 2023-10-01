@@ -13,6 +13,7 @@ typedef _GLFWwindowposfun = Void Function(Pointer<GLFWwindow>, Int, Int);
 typedef _GLFWkeyfun = Void Function(Pointer<GLFWwindow>, Int, Int, Int, Int);
 typedef _GLFWcharfun = Void Function(Pointer<GLFWwindow>, UnsignedInt);
 typedef _GLFWcursorposfun = Void Function(Pointer<GLFWwindow>, Double, Double);
+typedef _GLFWscrollfun = Void Function(Pointer<GLFWwindow>, Double, Double);
 typedef _GLFWmousebuttonfun = Void Function(Pointer<GLFWwindow>, Int, Int, Int);
 
 class Window {
@@ -24,6 +25,7 @@ class Window {
   final StreamController<KeyInputEvent> _keyInputListeners = StreamController.broadcast(sync: true);
   final StreamController<MouseInputEvent> _mouseInputListeners = StreamController.broadcast(sync: true);
   final StreamController<MouseMoveEvent> _mouseMoveListeners = StreamController.broadcast(sync: true);
+  final StreamController<double> _mouseScrollListeners = StreamController.broadcast(sync: true);
   final Vector2 _cursorPos = Vector2.zero();
 
   late int _x;
@@ -71,6 +73,7 @@ class Window {
     glfw.setWindowPosCallback(_handle, Pointer.fromFunction<_GLFWwindowposfun>(_onMove));
     glfw.setCursorPosCallback(_handle, Pointer.fromFunction<_GLFWcursorposfun>(_onMousePos));
     glfw.setMouseButtonCallback(_handle, Pointer.fromFunction<_GLFWmousebuttonfun>(_onMouseButton));
+    glfw.setScrollCallback(_handle, Pointer.fromFunction<_GLFWscrollfun>(_onScroll));
     glfw.setCharCallback(_handle, Pointer.fromFunction<_GLFWcharfun>(_onChar));
     glfw.setKeyCallback(_handle, Pointer.fromFunction<_GLFWkeyfun>(_onKey));
   }
@@ -111,6 +114,13 @@ class Window {
     final window = _knownWindows[handle.address]!;
 
     window._mouseInputListeners.add(MouseInputEvent(button, action, mods));
+  }
+
+  static void _onScroll(Pointer<GLFWwindow> handle, double xOffset, double yOffset) {
+    if (!_knownWindows.containsKey(handle.address)) return;
+    final window = _knownWindows[handle.address]!;
+
+    window._mouseScrollListeners.add(yOffset);
   }
 
   static void _onChar(Pointer<GLFWwindow> handle, int codepoint) {
@@ -168,6 +178,7 @@ class Window {
   Stream<KeyInputEvent> get onKey => _keyInputListeners.stream;
   Stream<MouseInputEvent> get onMouseButton => _mouseInputListeners.stream;
   Stream<MouseMoveEvent> get onMouseMove => _mouseMoveListeners.stream;
+  Stream<double> get onMouseScroll => _mouseScrollListeners.stream;
 
   int get x => _x;
   int get y => _y;

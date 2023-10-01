@@ -87,11 +87,10 @@ class Font {
     italic = faceStruct.style_flags & FT_STYLE_FLAG_ITALIC != 0;
 
     _ftFace = face.value;
-    freetype.Set_Pixel_Sizes(_ftFace, 0, size);
+    freetype.Set_Pixel_Sizes(_ftFace, size, size);
 
-    final blob = harfbuzz.blob_create_from_file(nativePath);
-    final hbFace = harfbuzz.face_create(blob, 0);
-    _hbFont = harfbuzz.font_create(hbFace);
+    _hbFont = harfbuzz.ft_font_create_referenced(_ftFace);
+    harfbuzz.ft_font_set_funcs(_hbFont);
     harfbuzz.font_set_scale(_hbFont, 64, 64);
 
     malloc.free(nativePath);
@@ -99,6 +98,7 @@ class Font {
 
   Glyph operator [](int index) => _glyphs[index] ?? _loadGlyph(index);
 
+  // TODO consider switching to SDF rendering
   Glyph _loadGlyph(int index) {
     if (freetype.Load_Glyph(_ftFace, index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_COLOR) != 0) {
       throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
@@ -106,14 +106,14 @@ class Font {
 
     final width = _ftFace.ref.glyph.ref.bitmap.width ~/ 3;
     final pitch = _ftFace.ref.glyph.ref.bitmap.pitch;
-    final height = _ftFace.ref.glyph.ref.bitmap.rows;
-    final (texture, u, v) = _allocateGlyphPosition(width, height);
+    final rows = _ftFace.ref.glyph.ref.bitmap.rows;
+    final (texture, u, v) = _allocateGlyphPosition(width, rows);
 
-    final glyphPixels = _ftFace.ref.glyph.ref.bitmap.buffer.cast<Uint8>().asTypedList(pitch * height);
-    final pixelBuffer = malloc<Uint8>(width * height * 3);
-    final pixels = pixelBuffer.asTypedList(width * height * 3);
+    final glyphPixels = _ftFace.ref.glyph.ref.bitmap.buffer.cast<Uint8>().asTypedList(pitch * rows);
+    final pixelBuffer = malloc<Uint8>(width * rows * 3);
+    final pixels = pixelBuffer.asTypedList(width * rows * 3);
 
-    for (var y = 0; y < height; y++) {
+    for (var y = 0; y < rows; y++) {
       for (var x = 0; x < width; x++) {
         pixels[y * width * 3 + x * 3] = glyphPixels[y * pitch + x * 3];
         pixels[y * width * 3 + x * 3 + 1] = glyphPixels[y * pitch + x * 3 + 1];
@@ -121,16 +121,18 @@ class Font {
       }
     }
 
-    gl.bindTexture(glTexture2d, _glyphTextures.first);
+    gl.bindTexture(glTexture2d, texture);
     gl.pixelStorei(glUnpackAlignment, 1);
-    gl.texSubImage2D(glTexture2d, 0, u, v, width, height, glRgb, glUnsignedByte, pixelBuffer.cast());
+    gl.texSubImage2D(glTexture2d, 0, u, v, width, rows, glRgb, glUnsignedByte, pixelBuffer.cast());
+
+    malloc.free(pixelBuffer);
 
     return _glyphs[index] = Glyph(
       texture,
       u,
       v,
       width,
-      height,
+      rows,
       _ftFace.ref.glyph.ref.bitmap_left,
       _ftFace.ref.glyph.ref.bitmap_top,
     );
@@ -199,7 +201,7 @@ class Glyph {
 }
 
 class TextRenderer {
-  final _cachedRenderObjects = <int, MeshBuffer<TextVertexFunction>>{};
+  final _cachedBuffers = <int, MeshBuffer<TextVertexFunction>>{};
   final GlProgram _program;
 
   final FontFamily _defaultFont;
@@ -212,24 +214,17 @@ class TextRenderer {
   FontFamily getFont(String? familyName) =>
       familyName == null ? _defaultFont : _fontStorage[familyName] ?? _defaultFont;
 
-  Size sizeOf(Text text, {double scale = 1}) {
+  Size sizeOf(Text text, double size) {
     if (!text.isShaped) text.shape(getFont);
     if (text.glyphs.isEmpty) return Size.zero;
 
-    int width = 0;
-    for (var i = 0; i < text.glyphs.length - 1; i++) {
-      final glyph = text.glyphs[i];
-      width += _hbToPixels(glyph.advance.x, glyph.font.size);
-    }
-
-    width += text.glyphs.last.font[text.glyphs.last.index].width;
     return Size(
-      (width * scale).round(),
-      (text.glyphs.map((e) => e.font[e.index].height).reduce(max) * scale).round(),
+      text.glyphs.map((e) => _hbToPixels(e.position.x + e.advance.x) * (size / e.font.size)).reduce(max).ceil(),
+      size.ceil(),
     );
   }
 
-  void drawText(int x, int y, Text text, Matrix4 projection, {double scale = 1, Color? color}) {
+  void drawText(int x, int y, Text text, double size, Matrix4 projection, {Color? color}) {
     if (!text.isShaped) text.shape(getFont);
 
     color ??= Color.white;
@@ -237,27 +232,29 @@ class TextRenderer {
       ..use()
       ..uniformMat4("uProjection", projection);
 
-    final renderObjects = <int, MeshBuffer<TextVertexFunction>>{};
-    MeshBuffer<TextVertexFunction> renderObject(int texture) {
-      return renderObjects[texture] ??
-          (renderObjects[texture] = (_cachedRenderObjects[texture]?..clear()) ??
-              (_cachedRenderObjects[texture] = MeshBuffer(textVertexDescriptor, _program)));
+    final buffers = <int, MeshBuffer<TextVertexFunction>>{};
+    MeshBuffer<TextVertexFunction> buffer(int texture) {
+      return buffers[texture] ??= ((_cachedBuffers[texture]?..clear()) ??
+          (_cachedBuffers[texture] = MeshBuffer(textVertexDescriptor, _program)));
     }
 
-    final textHeight = sizeOf(text).height;
+    final baseline = (size * .875).floor();
     for (final shapedGlyph in text.glyphs) {
-      final fontSize = shapedGlyph.font.size;
       final glyph = shapedGlyph.font[shapedGlyph.index];
       final glyphColor = shapedGlyph.style.color?.asVector() ?? color.asVector();
 
-      final xPos = x + _hbToPixels(shapedGlyph.position.x, fontSize) * scale + glyph.bearingX * scale;
-      final yPos = y + _hbToPixels(shapedGlyph.position.y, fontSize) * scale + (textHeight - glyph.bearingY) * scale;
-      final width = glyph.width * scale, height = glyph.height * scale;
+      final scale = size / shapedGlyph.font.size, glyphScale = shapedGlyph.style.scale;
 
-      final u0 = (glyph.u / 1024), u1 = (glyph.u / 1024) + (glyph.width / 1024);
-      final v0 = (glyph.v / 1024), v1 = (glyph.v / 1024) + (glyph.height / 1024);
+      final xPos = x + _hbToPixels(shapedGlyph.position.x) * scale + glyph.bearingX * scale;
+      final yPos = y + _hbToPixels(shapedGlyph.position.y) * scale + baseline - glyph.bearingY * scale * glyphScale;
 
-      renderObject(glyph.textureId)
+      final width = glyph.width * scale * glyphScale;
+      final height = glyph.height * scale * glyphScale;
+
+      final u0 = (glyph.u / 1024), u1 = u0 + (glyph.width / 1024);
+      final v0 = (glyph.v / 1024), v1 = v0 + (glyph.height / 1024);
+
+      buffer(glyph.textureId)
         ..vertex(xPos, yPos, u0, v0, glyphColor)
         ..vertex(xPos, yPos + height, u0, v1, glyphColor)
         ..vertex(xPos + width, yPos, u1, v0, glyphColor)
@@ -269,13 +266,15 @@ class TextRenderer {
     gl.activeTexture(glTexture0);
     gl.blendFunc(glSrc1Color, glOneMinusSrc1Color);
 
-    renderObjects.forEach((texture, mesh) {
+    buffers.forEach((texture, mesh) {
       gl.bindTexture(glTexture2d, texture);
       mesh
         ..upload(dynamic: true)
         ..draw();
     });
+
+    gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
   }
 
-  int _hbToPixels(double hbUnits, int fontSize) => ((hbUnits / 64) * fontSize).round();
+  int _hbToPixels(double hbUnits) => (hbUnits / 64).round();
 }

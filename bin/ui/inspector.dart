@@ -7,7 +7,7 @@ import 'component.dart';
 import 'insets.dart';
 
 abstract class Inspector {
-  static const _textScale = .7;
+  static const _textSize = 20.0;
 
   /// Draw the area around the given rectangle which
   /// the given insets describe
@@ -57,7 +57,7 @@ abstract class Inspector {
       drawInsets(context, child.x, child.y, child.width, child.height, margins, Color.ofArgb(0xA7FFF338));
 
       context.primitives.roundedRect(child.x.toDouble(), child.y.toDouble(), child.width.toDouble(),
-          child.height.toDouble(), 5, Color.ofArgb(0xFF3AB0FF), context.projection,
+          child.height.toDouble(), 2, Color.ofArgb(0xFF3AB0FF), context.projection,
           outlineThickness: 1);
 
       if (onlyHovered) {
@@ -65,14 +65,16 @@ abstract class Inspector {
 
         final descriptor = Text([
           StyledString(
-              "${child.x},${child.y} (${child.width},${child.height}) <${child.margins.value.top},${child.margins.value.bottom},${child.margins.value.left},${child.margins.value.right}>"),
+            "${child.x},${child.y} (${child.width},${child.height}) <${child.margins.value.top},${child.margins.value.bottom},${child.margins.value.left},${child.margins.value.right}>",
+          ),
           if (child is ParentComponent)
             StyledString(
-                " <${child.padding.value.top},${child.padding.value.bottom},${child.padding.value.left},${child.padding.value.right}>"),
+              " <${child.padding.value.top},${child.padding.value.bottom},${child.padding.value.left},${child.padding.value.right}>",
+            ),
         ]);
 
-        final nameSize = context.textRenderer.sizeOf(nameText, scale: _textScale);
-        final descriptorSize = context.textRenderer.sizeOf(descriptor, scale: _textScale);
+        final nameSize = context.textRenderer.sizeOf(nameText, _textSize);
+        final descriptorSize = context.textRenderer.sizeOf(descriptor, _textSize);
 
         int inspectorX = child.x + 1;
         int inspectorY = child.y + child.height + child.margins.value.bottom + 1;
@@ -88,15 +90,15 @@ abstract class Inspector {
         }
 
         int width = max(nameSize.width, descriptorSize.width);
-        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
+        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 6,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection);
-        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 3,
+        context.primitives.roundedRect(inspectorX.toDouble(), inspectorY.toDouble(), width + 6,
             inspectorHeight.toDouble(), 5, Color.ofArgb(0xA7000000), context.projection,
             outlineThickness: 1);
 
-        context.textRenderer.drawText(inspectorX + 2, inspectorY + 3, nameText, context.projection, scale: _textScale);
-        context.textRenderer.drawText(inspectorX + 2, inspectorY + nameSize.height + 3, descriptor, context.projection,
-            scale: _textScale);
+        context.textRenderer.drawText(inspectorX + 3, inspectorY + 3, nameText, _textSize, context.projection);
+        context.textRenderer
+            .drawText(inspectorX + 3, inspectorY + nameSize.height + 5, descriptor, _textSize, context.projection);
       }
     }
   }

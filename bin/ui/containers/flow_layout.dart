@@ -66,7 +66,7 @@ class FlowLayout extends ParentComponent {
 
   @override
   void removeChild(Component child) {
-    if (children.remove(child)) {
+    if (_children.remove(child)) {
       child.dismount(DismountReason.removed);
       updateLayout();
     }

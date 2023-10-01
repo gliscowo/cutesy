@@ -85,10 +85,10 @@ abstract class Component with Rectangle {
   FocusHandler? get focusHandler => parent?.focusHandler;
 
   /// The positioning of this component
-  final AnimatableProperty<Positioning> positioning = AnimatableProperty.create(Positioning.layout);
+  final AnimatableProperty<Positioning> positioning = Positioning.layout.animatable;
 
   /// The external margins of this component
-  final AnimatableProperty<Insets> margins = AnimatableProperty.create(Insets.zero);
+  final AnimatableProperty<Insets> margins = Insets.zero.animatable;
 
   /// Set the method this component uses to determine its size
   /// on both axes to [sizing]
@@ -98,10 +98,10 @@ abstract class Component with Rectangle {
   }
 
   /// The sizing method this component uses on the x-axis
-  final AnimatableProperty<Sizing> horizontalSizing = AnimatableProperty.create(Sizing.content());
+  final AnimatableProperty<Sizing> horizontalSizing = Sizing.content().animatable;
 
   /// The sizing method this component uses on the y-axis
-  final AnimatableProperty<Sizing> verticalSizing = AnimatableProperty.create(Sizing.content());
+  final AnimatableProperty<Sizing> verticalSizing = Sizing.content().animatable;
 
   /// Determine whether this component should
   /// currently draw its tooltip
@@ -453,7 +453,7 @@ abstract class ParentComponent extends Component {
   final Observable<HorizontalAlignment> horizontalAlignment = Observable.create(HorizontalAlignment.left);
 
   /// The internal padding of this component
-  final AnimatableProperty<Insets> padding = AnimatableProperty.create(Insets.zero);
+  final AnimatableProperty<Insets> padding = Insets.zero.animatable;
 
   /// Whether this component allows its
   /// children to overflow its bounding box
@@ -839,7 +839,7 @@ abstract class ParentComponent extends Component {
   LayoutContext get childContext {
     final padding = this.padding.value;
 
-    return _layoutContext!.copy(
+    return _layoutContext!.copyWith(
       space: Size(
         horizontalSizing.value.isContent
             ? _layoutContext!.space.width - padding.horizontal
@@ -858,7 +858,7 @@ class LayoutContext {
   LayoutContext(this.window, this.textRenderer, this.space);
   LayoutContext.ofWindow(this.window, this.textRenderer) : space = Size(window.width, window.height);
 
-  LayoutContext copy({Window? window, TextRenderer? textRenderer, Size? space}) =>
+  LayoutContext copyWith({Window? window, TextRenderer? textRenderer, Size? space}) =>
       LayoutContext(window ?? this.window, textRenderer ?? this.textRenderer, space ?? this.space);
 
   @override

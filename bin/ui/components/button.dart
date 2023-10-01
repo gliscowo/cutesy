@@ -20,10 +20,10 @@ class Button extends Component {
   }
 
   @override
-  int determineHorizontalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text).width + 30;
+  int determineHorizontalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text, 30).width + 20;
 
   @override
-  int determineVerticalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text).height + 30;
+  int determineVerticalContentSize(Sizing sizing) => layoutContext!.textRenderer.sizeOf(text, 30).height + 20;
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
@@ -38,16 +38,17 @@ class Button extends Component {
       y.toDouble(),
       width.toDouble(),
       height.toDouble(),
-      10.0.lerp(_hoverTime, 20),
+      10.0.lerp(_hoverTime, 15),
       Color.ofRgb(0x0096FF).interpolate(Color.ofRgb(0x00D7FF), _hoverTime),
       context.projection,
     );
 
-    final textSize = context.textRenderer.sizeOf(text);
+    final textSize = context.textRenderer.sizeOf(text, 30);
     context.textRenderer.drawText(
       x + (width - textSize.width) ~/ 2,
       y + (height - textSize.height) ~/ 2,
       text,
+      30,
       context.projection,
     );
   }

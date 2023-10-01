@@ -6,7 +6,7 @@ abstract interface class Animatable<A extends Animatable<A>> {
   A interpolate(A next, double delta);
 }
 
-typedef Observer<T> = void Function(T);
+typedef Observer<T> = void Function(T value);
 
 ///
 /// A container which allows observing changes to its value.
@@ -79,6 +79,10 @@ class Observable<T> {
   }
 }
 
+extension Observe<T> on T {
+  Observable<T> get observable => Observable.create(this);
+}
+
 /// A container which holds an animatable object,
 /// used to manage to properties of UI components. Extends
 /// the {@link Observable} container so that changes in its value
@@ -125,6 +129,10 @@ class AnimatableProperty<A extends Animatable<A>> extends Observable<A> {
     if (_animation == null) return;
     _animation!.update(delta);
   }
+}
+
+extension Animate<T extends Animatable<T>> on T {
+  AnimatableProperty<T> get animatable => AnimatableProperty.create(this);
 }
 
 typedef Easing = double Function(double);
