@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:vector_math/vector_math.dart';
 
@@ -6,6 +7,7 @@ import '../../color.dart';
 import '../../context.dart';
 import '../../gl/vertex_buffer.dart';
 import '../../gl/vertex_descriptor.dart';
+import '../../text/text.dart';
 import '../component.dart';
 import '../sizing.dart';
 
@@ -18,10 +20,10 @@ class Metrics extends Component {
   MeshBuffer<PosColorVertexFunction>? _graphBuffer;
 
   @override
-  int determineHorizontalContentSize(Sizing sizing) => 200;
+  int determineHorizontalContentSize(Sizing sizing) => 200 + 60;
 
   @override
-  int determineVerticalContentSize(Sizing sizing) => 100;
+  int determineVerticalContentSize(Sizing sizing) => 100 + 10;
 
   @override
   void update(double delta, int mouseX, int mouseY) {
@@ -37,21 +39,28 @@ class Metrics extends Component {
       _countedFrames = 0;
 
       _frametimes.add(frametime);
-      if (_frametimes.length > 200) _frametimes.removeFirst();
+      if (_frametimes.length > 100) _frametimes.removeFirst();
     }
   }
 
   @override
   void draw(DrawContext context, int mouseX, int mouseY, double delta) {
+    const textSize = 14.0;
+    context.textRenderer.drawText(x + width - 60 + 3, (y + 10 - textSize / 2).round(),
+        Text.string("30 FPS", style: TextStyle(fontFamily: "CascadiaCode")), textSize, context.projection);
+    context.textRenderer.drawText(x + width - 60 + 3, (y + 10 + height / 2 - textSize / 2).round(),
+        Text.string("60 FPS", style: TextStyle(fontFamily: "CascadiaCode")), textSize, context.projection);
+
     final buffer =
         _graphBuffer ??= MeshBuffer(posColorVertexDescriptor, context.renderContext.findProgram("pos_color"));
 
     buffer.clear();
-    context.primitives.buildRect(buffer.vertex, x.toDouble(), y.toDouble(), 200, 1, Color.black);
+    context.primitives.buildRect(buffer.vertex, x.toDouble(), y + 10, width - 60, 1, Color.white);
+    context.primitives.buildRect(buffer.vertex, x.toDouble(), y + 10 + (height - 10) / 2, width - 60, 1, Color.white);
     for (var (idx, measure) in _frametimes.indexed) {
-      final height = (measure * 60) * 100;
-      context.primitives
-          .buildRect(buffer.vertex, x.toDouble() + idx, y + (this.height - height), 1, height, Color.green);
+      final height = (measure * 60) * ((this.height - 10) / 2);
+      context.primitives.buildRect(buffer.vertex, x.toDouble() + idx * 2, y + 10 + (this.height - 10 - height), 2,
+          height, Color.green.interpolate(Color.red, max(0, 1 - 1 / (measure * 60))));
     }
 
     buffer.program
