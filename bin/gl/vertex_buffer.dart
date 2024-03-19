@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:dart_opengl/dart_opengl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
-import 'package:vector_math/vector_math.dart';
 
 import '../cutesy.dart';
 import 'shader.dart';
@@ -49,6 +48,7 @@ class MeshBuffer<VF extends Function> {
   void delete() {
     _vbo.delete();
     _vao.delete();
+    malloc.free(_buffer._pointer);
   }
 }
 
@@ -72,23 +72,16 @@ class GlVertexBuffer {
   }
 
   void upload(BufferWriter data, {bool dynamic = false}) {
-    final bytes = data._data.buffer.asUint8List();
-
-    final buffer = malloc<Uint8>(data._cursor);
-    buffer.asTypedList(data._cursor).setRange(0, data._cursor, bytes);
-
     gl.bindBuffer(glArrayBuffer, _id);
 
     if (data._cursor > _vboSize) {
-      gl.bufferData(glArrayBuffer, data._cursor, buffer.cast(), dynamic ? glDynamicDraw : glStaticDraw);
+      gl.bufferData(glArrayBuffer, data._cursor, data._pointer.cast(), dynamic ? glDynamicDraw : glStaticDraw);
       _vboSize = data._cursor;
     } else {
-      gl.bufferSubData(glArrayBuffer, 0, data._cursor, buffer.cast());
+      gl.bufferSubData(glArrayBuffer, 0, data._cursor, data._pointer.cast());
     }
 
     gl.bindBuffer(glArrayBuffer, 0);
-
-    malloc.free(buffer);
   }
 
   void delete() {
@@ -132,14 +125,26 @@ class GlVertexArray {
 
 class BufferWriter {
   static final Logger _logger = Logger("cutesy.buffer_writer");
-  static const int _float32Size = 4;
+  static const int _float32Size = Float32List.bytesPerElement;
 
-  ByteData _data;
+  late ByteData _data;
+  late Pointer<Uint8> _pointer;
   int _cursor = 0;
 
-  BufferWriter([int initialSize = 64]) : _data = ByteData(initialSize);
+  BufferWriter([int initialSize = 64]) {
+    _pointer = malloc<Uint8>(initialSize);
+    _data = _pointer.asTypedList(initialSize).buffer.asByteData();
+  }
 
-  void vec3(Vector3 vec) => float3(vec.x, vec.y, vec.z);
+  void float2(double a, double b) {
+    _ensureCapacity(_float32Size * 2);
+
+    _data
+      ..setFloat32(_cursor + _float32Size * 0, a, Endian.host)
+      ..setFloat32(_cursor + _float32Size * 1, b, Endian.host);
+    _cursor += _float32Size * 2;
+  }
+
   void float3(double a, double b, double c) {
     _ensureCapacity(_float32Size * 3);
 
@@ -150,7 +155,6 @@ class BufferWriter {
     _cursor += _float32Size * 3;
   }
 
-  void vec4(Vector4 vec) => float4(vec.x, vec.y, vec.z, vec.w);
   void float4(double a, double b, double c, double d) {
     _ensureCapacity(_float32Size * 4);
 
@@ -175,8 +179,10 @@ class BufferWriter {
       "Growing BufferWriter $hashCode from ${_data.lengthInBytes} to ${_data.lengthInBytes * 2} bytes to fit ${_cursor + bytes}",
     );
 
-    final newData = ByteData(_data.lengthInBytes * 2);
-    newData.buffer.asUint8List().setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());
-    _data = newData;
+    final newPointer = malloc<Uint8>(_data.lengthInBytes * 2);
+    newPointer.asTypedList(_data.lengthInBytes * 2).setRange(0, _data.lengthInBytes, _data.buffer.asUint8List());
+    malloc.free(_pointer);
+    _pointer = newPointer;
+    _data = _pointer.asTypedList(_data.lengthInBytes * 2).buffer.asByteData();
   }
 }

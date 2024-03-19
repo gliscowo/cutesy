@@ -38,7 +38,7 @@ class TextField extends Component {
       outlineThickness: 1,
     );
 
-    final renderText = Text.string(_content, style: TextStyle(fontFamily: "CascadiaCode"));
+    final renderText = Text.string(_content);
     final renderTextSize = context.textRenderer.sizeOf(renderText, 15);
 
     if (focused) {

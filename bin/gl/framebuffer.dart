@@ -18,6 +18,9 @@ class GlFramebuffer {
     _initGlState();
   }
 
+  factory GlFramebuffer.trackingWindow(Window window, {bool stencil = false}) =>
+      GlFramebuffer(window.width, window.height, stencil: stencil)..trackWindow(window);
+
   void _initGlState() {
     final idPointer = malloc<UnsignedInt>();
     gl.genFramebuffers(1, idPointer);
@@ -62,9 +65,9 @@ class GlFramebuffer {
     });
   }
 
-  void clear(Color color) {
+  void clear(Color color, {bool clearColor = true, bool clearDepth = true}) {
     gl.clearColor(color.r, color.g, color.b, color.a);
-    gl.clear(glColorBufferBit | glDepthBufferBit);
+    gl.clear((clearColor ? glColorBufferBit : 0) | (clearDepth ? glDepthBufferBit : 0));
   }
 
   void bind({bool draw = true, bool read = true}) {
@@ -84,20 +87,12 @@ class GlFramebuffer {
   int get height => _height;
   int get colorAttachment => _colorAttachmentId;
 
-  int _target(bool draw, bool read) {
-    int target;
-    if (draw && read) {
-      target = glFramebuffer;
-    } else if (draw && !read) {
-      target = glDrawFramebuffer;
-    } else if (!draw && read) {
-      target = glReadFramebuffer;
-    } else {
-      throw ArgumentError("Either draw or read must be set");
-    }
-
-    return target;
-  }
+  int _target(bool draw, bool read) => switch ((draw, read)) {
+        (true, true) => glFramebuffer,
+        (true, false) => glDrawFramebuffer,
+        (false, true) => glReadFramebuffer,
+        _ => throw ArgumentError("Either draw or read must be set")
+      };
 
   int _genGlObject(void Function(int, Pointer<UnsignedInt>) factory) {
     final object = malloc<UnsignedInt>();

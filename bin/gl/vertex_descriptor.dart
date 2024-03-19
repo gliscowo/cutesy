@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:dart_opengl/dart_opengl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../color.dart';
 import '../cutesy.dart';
 import 'vertex_buffer.dart';
 
@@ -13,19 +14,19 @@ enum VertexElement {
   const VertexElement(this.size, this.glType);
 }
 
-typedef PosColorVertexFunction = void Function(Vector3 pos, Vector4 color);
+typedef PosColorVertexFunction = void Function(Vector3 pos, Color color);
 final VertexDescriptor<PosColorVertexFunction> posColorVertexDescriptor = VertexDescriptor(
   (attribute) {
     attribute("aPos", VertexElement.float, 3);
     attribute("aColor", VertexElement.float, 4);
   },
   (buffer) => (pos, color) {
-    buffer.vec3(pos);
-    buffer.vec4(color);
+    buffer.float3(pos.x, pos.y, pos.z);
+    buffer.float4(color.r, color.g, color.b, color.a);
   },
 );
 
-typedef TextVertexFunction = void Function(double x, double y, double u, double v, Vector4 color);
+typedef TextVertexFunction = void Function(double x, double y, double u, double v, Color color);
 final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescriptor(
   (attribute) {
     attribute("aPos", VertexElement.float, 2);
@@ -33,7 +34,8 @@ final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescript
     attribute("aColor", VertexElement.float, 4);
   },
   (buffer) => (x, y, u, v, color) {
-    buffer.float4(x, y, u, v);
+    buffer.float2(x, y);
+    buffer.float2(u, v);
     buffer.float4(color.r, color.g, color.b, color.a);
   },
 );

@@ -19,7 +19,7 @@ import '../ui/math.dart';
 import 'text.dart';
 
 final freetype = FreetypeLibrary(DynamicLibrary.open("libfreetype.so"));
-final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("libharfbuzz.so"));
+final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("libharfbuzz.so.0"));
 
 final Logger _logger = Logger("cutesy.text_handler");
 
@@ -169,6 +169,7 @@ class Font {
 
     gl.pixelStorei(glUnpackAlignment, 1);
     gl.texImage2D(glTexture2d, 0, glRgb, 1024, 1024, 0, glRgb, glUnsignedByte, nullptr);
+    gl.generateMipmap(glTexture2d);
 
     gl.texParameteri(glTexture2d, glTextureWrapS, glClampToEdge);
     gl.texParameteri(glTexture2d, glTextureWrapT, glClampToEdge);
@@ -241,7 +242,7 @@ class TextRenderer {
     final baseline = (size * .875).floor();
     for (final shapedGlyph in text.glyphs) {
       final glyph = shapedGlyph.font[shapedGlyph.index];
-      final glyphColor = shapedGlyph.style.color?.asVector() ?? color.asVector();
+      final glyphColor = shapedGlyph.style.color ?? color;
 
       final scale = size / shapedGlyph.font.size, glyphScale = shapedGlyph.style.scale;
 

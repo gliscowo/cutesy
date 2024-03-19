@@ -25,7 +25,7 @@ class ImmediatePrimitiveRenderer {
         _blurBuffer = MeshBuffer(posColorVertexDescriptor, _context.findProgram("blur")),
         _roundedBuffer = MeshBuffer(posColorVertexDescriptor, _context.findProgram("rounded_rect")),
         _roundedOutlineBuffer = MeshBuffer(posColorVertexDescriptor, _context.findProgram("rounded_rect_outline")),
-        _blurFramebuffer = GlFramebuffer(_context.window.width, _context.window.height)..trackWindow(_context.window);
+        _blurFramebuffer = GlFramebuffer.trackingWindow(_context.window);
 
   void roundedRect(double x, double y, double width, double height, double radius, Color color, Matrix4 projection,
       {double? outlineThickness}) {
@@ -118,24 +118,11 @@ class ImmediatePrimitiveRenderer {
     double height,
     Color color,
   ) {
-    vertex(Vector3(x, y, 0), color.asVector());
-    vertex(Vector3(x, y + height, 0), color.asVector());
-    vertex(Vector3(x + width, y + height, 0), color.asVector());
-    vertex(Vector3(x + width, y + height, 0), color.asVector());
-    vertex(Vector3(x + width, y, 0), color.asVector());
-    vertex(Vector3(x, y, 0), color.asVector());
-  }
-
-  void buildTri(
-    PosColorVertexFunction vertex,
-    double x,
-    double y,
-    double width,
-    double height,
-    Color color,
-  ) {
-    vertex(Vector3(x, y + height, 0), color.asVector());
-    vertex(Vector3(x + width, y + height, 0), color.asVector());
-    vertex(Vector3(x + width / 2, y, 0), color.asVector());
+    vertex(Vector3(x, y, 0), color);
+    vertex(Vector3(x, y + height, 0), color);
+    vertex(Vector3(x + width, y + height, 0), color);
+    vertex(Vector3(x + width, y + height, 0), color);
+    vertex(Vector3(x + width, y, 0), color);
+    vertex(Vector3(x, y, 0), color);
   }
 }
