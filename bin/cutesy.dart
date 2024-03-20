@@ -12,6 +12,9 @@ import 'color.dart';
 import 'context.dart';
 import 'gl/debug.dart';
 import 'gl/shader.dart';
+import 'gl/vertex_buffer.dart';
+import 'gl/vertex_descriptor.dart';
+import 'obj.dart';
 import 'primitive_renderer.dart';
 import 'text/text.dart';
 import 'text/text_renderer.dart';
@@ -180,6 +183,13 @@ void main(List<String> args) {
 
   glfw.swapInterval(0);
 
+  final cube = loadObj(File("resources/suzanne.obj"));
+  final cubeBuffer = MeshBuffer(posColorVertexDescriptor, renderContext.findProgram("pos_color"));
+  for (final index in cube.indices) {
+    cubeBuffer.vertex(cube.vertices[index - 1], Color.green);
+  }
+  cubeBuffer.upload();
+
   while (_running && glfw.windowShouldClose(_window.handle) != glfwTrue) {
     gl.clearColor(.25, .25, .25, 0);
     gl.clear(glColorBufferBit);
@@ -209,6 +219,17 @@ void main(List<String> args) {
     if (inspector) {
       Inspector.drawInspector(drawContext, ui.root, _window.cursorX, _window.cursorY, true);
     }
+
+    cubeBuffer.program.uniformMat4("uProjection", projection);
+    cubeBuffer.program.uniformMat4(
+        "uTransform",
+        Matrix4.identity()
+          ..translate(200.0, 200.0)
+          ..rotateY(45)
+          ..rotateX(45)
+          ..scale(75.0, 75.0, 75.0));
+    cubeBuffer.program.use();
+    cubeBuffer.draw();
 
     _window.nextFrame();
 
