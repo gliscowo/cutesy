@@ -8,7 +8,7 @@ import '../cutesy.dart';
 import '../window.dart';
 
 class GlFramebuffer {
-  late int _id, _colorAttachmentId;
+  late int _fbo, _colorAttachmentId;
 
   int _width, _height;
   late final bool _stencil;
@@ -23,36 +23,29 @@ class GlFramebuffer {
 
   void _initGlState() {
     final idPointer = malloc<UnsignedInt>();
-    gl.genFramebuffers(1, idPointer);
-    _id = idPointer.value;
+    gl.createFramebuffers(1, idPointer);
+    _fbo = idPointer.value;
     malloc.free(idPointer);
 
-    bind();
+    _colorAttachmentId = _genGlObject((_, ptr) => gl.createTextures(glTexture2d, 1, ptr));
 
-    _colorAttachmentId = _genGlObject(gl.genTextures);
-    gl.bindTexture(glTexture2d, _colorAttachmentId);
+    gl.textureStorage2D(_fbo, 1, glRgba8, _width, _height);
+    gl.textureParameteri(_fbo, glTextureMinFilter, glLinear);
+    gl.textureParameteri(_fbo, glTextureMagFilter, glLinear);
+    gl.textureParameteri(_fbo, glTextureWrapS, glClampToEdge);
+    gl.textureParameteri(_fbo, glTextureWrapT, glClampToEdge);
 
-    gl.texImage2D(glTexture2d, 0, glRgba, _width, _height, 0, glRgba, glUnsignedByte, nullptr);
-    gl.texParameteri(glTexture2d, glTextureMinFilter, glLinear);
-    gl.texParameteri(glTexture2d, glTextureMagFilter, glLinear);
-    gl.texParameteri(glTexture2d, glTextureWrapS, glClampToEdge);
-    gl.texParameteri(glTexture2d, glTextureWrapT, glClampToEdge);
-
-    gl.framebufferTexture2D(glFramebuffer, glColorAttachment0, glTexture2d, _colorAttachmentId, 0);
+    gl.namedFramebufferTexture(_fbo, glColorAttachment0, _colorAttachmentId, 0);
 
     if (_stencil) {
-      final depthStencilRenderbuffer = _genGlObject(gl.genRenderbuffers);
-      gl.bindRenderbuffer(glRenderbuffer, depthStencilRenderbuffer);
-      gl.renderbufferStorage(glRenderbuffer, glDepth24Stencil8, _width, _height);
-      gl.framebufferRenderbuffer(glFramebuffer, glDepthStencilAttachment, glRenderbuffer, depthStencilRenderbuffer);
+      final depthStencilRenderbuffer = _genGlObject(gl.createRenderbuffers);
+      gl.namedRenderbufferStorage(depthStencilRenderbuffer, glDepth24Stencil8, _width, _height);
+      gl.namedFramebufferRenderbuffer(_fbo, glDepthStencilAttachment, glRenderbuffer, depthStencilRenderbuffer);
     } else {
-      final depthRenderbuffer = _genGlObject(gl.genRenderbuffers);
-      gl.bindRenderbuffer(glRenderbuffer, depthRenderbuffer);
-      gl.renderbufferStorage(glRenderbuffer, glDepthComponent, _width, _height);
-      gl.framebufferRenderbuffer(glFramebuffer, glDepthAttachment, glRenderbuffer, depthRenderbuffer);
+      final depthRenderbuffer = _genGlObject(gl.createRenderbuffers);
+      gl.namedRenderbufferStorage(depthRenderbuffer, glDepthComponent, _width, _height);
+      gl.namedFramebufferRenderbuffer(_fbo, glDepthAttachment, glRenderbuffer, depthRenderbuffer);
     }
-
-    unbind();
   }
 
   void trackWindow(Window window) {
@@ -65,27 +58,45 @@ class GlFramebuffer {
     });
   }
 
-  void clear(Color color, {bool clearColor = true, bool clearDepth = true}) {
-    gl.clearColor(color.r, color.g, color.b, color.a);
-    gl.clear((clearColor ? glColorBufferBit : 0) | (clearDepth ? glDepthBufferBit : 0));
+  void clear({Color? color, double? depth, double? stencil}) {
+    if (color != null) {
+      final colorPtr = malloc<Float>(4);
+      final colors = colorPtr.asTypedList(4);
+      colors[0] = color.r;
+      colors[1] = color.g;
+      colors[2] = color.b;
+      colors[3] = color.a;
+      gl.clearNamedFramebufferfv(_fbo, glColor, 0, colorPtr);
+      malloc.free(colorPtr);
+    }
+
+    if (depth != null) {
+      final depthPtr = malloc<Float>();
+      depthPtr.value = depth;
+      gl.clearNamedFramebufferfv(_fbo, glDepth, 0, depthPtr);
+      malloc.free(depthPtr);
+    }
+
+    if (stencil != null) {
+      final stencilPtr = malloc<Float>();
+      stencilPtr.value = stencil;
+      gl.clearNamedFramebufferfv(_fbo, glStencil, 0, stencilPtr);
+      malloc.free(stencilPtr);
+    }
   }
 
-  void bind({bool draw = true, bool read = true}) {
-    gl.bindFramebuffer(_target(draw, read), _id);
-  }
-
-  void unbind({bool draw = true, bool read = true}) {
-    gl.bindFramebuffer(_target(draw, read), 0);
-  }
+  void bind({bool draw = true, bool read = true}) => gl.bindFramebuffer(_target(draw, read), _fbo);
+  void unbind({bool draw = true, bool read = true}) => gl.bindFramebuffer(_target(draw, read), 0);
 
   void delete() {
-    _deleteGlObject(gl.deleteFramebuffers, _id);
+    _deleteGlObject(gl.deleteFramebuffers, _fbo);
     _deleteGlObject(gl.deleteTextures, _colorAttachmentId);
   }
 
   int get width => _width;
   int get height => _height;
   int get colorAttachment => _colorAttachmentId;
+  int get fbo => _fbo;
 
   int _target(bool draw, bool read) => switch ((draw, read)) {
         (true, true) => glFramebuffer,

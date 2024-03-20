@@ -1,10 +1,10 @@
-import 'dart:ffi';
-
 import 'package:dart_opengl/dart_opengl.dart';
+import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
 import '../color.dart';
 import '../cutesy.dart';
+import 'shader.dart';
 import 'vertex_buffer.dart';
 
 enum VertexElement {
@@ -41,6 +41,8 @@ final VertexDescriptor<TextVertexFunction> textVertexDescriptor = VertexDescript
 );
 
 class VertexDescriptor<VertexFunction extends Function> {
+  static final _logger = Logger("cutesy.vertex_descriptor");
+
   final VertexFunction Function(BufferWriter) _builderFactory;
   final List<_VertexAttribute> _attributes = [];
   int _vertexSize = 0;
@@ -52,18 +54,23 @@ class VertexDescriptor<VertexFunction extends Function> {
     });
   }
 
-  void prepareAttributes(int Function(String) attributeLookup) {
+  void prepareAttributes(int vao, GlProgram program) {
     for (final attr in _attributes) {
-      final location = attributeLookup(attr.name);
+      final location = program.getAttributeLocation(attr.name);
+      if (location == -1) {
+        _logger.warning("Did not find attribute '${attr.name}' in program '${program.name}'");
+        continue;
+      }
 
-      gl.enableVertexAttribArray(location);
-      gl.vertexAttribPointer(
+      gl.enableVertexArrayAttrib(vao, location);
+      gl.vertexArrayAttribBinding(vao, location, 0);
+      gl.vertexArrayAttribFormat(
+        vao,
         location,
         attr.count,
         attr.element.glType,
         glFalse,
-        _vertexSize,
-        Pointer.fromAddress(attr.offset),
+        attr.offset,
       );
     }
   }

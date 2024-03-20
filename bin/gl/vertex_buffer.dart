@@ -22,13 +22,8 @@ class MeshBuffer<VF extends Function> {
   MeshBuffer(VertexDescriptor<VF> descriptor, this.program, {int initialBufferSize = 1024})
       : _descriptor = descriptor,
         _buffer = BufferWriter(initialBufferSize) {
-    _vbo.bind();
-    _vao.bind();
-
-    descriptor.prepareAttributes(program.getAttributeLocation);
-
-    _vao.unbind();
-    _vbo.unbind();
+    gl.vertexArrayVertexBuffer(_vao._id, 0, _vbo._id, 0, descriptor.vertexSize);
+    descriptor.prepareAttributes(_vao._id, program);
 
     vertex = descriptor.createBuilder(_buffer);
   }
@@ -58,35 +53,28 @@ class GlVertexBuffer {
 
   GlVertexBuffer() {
     final idPointer = malloc<UnsignedInt>();
-    gl.genBuffers(1, idPointer);
+    gl.createBuffers(1, idPointer);
     _id = idPointer.value;
     malloc.free(idPointer);
   }
 
-  void bind() {
-    gl.bindBuffer(glArrayBuffer, _id);
-  }
-
-  void unbind() {
-    gl.bindBuffer(glArrayBuffer, 0);
-  }
-
   void upload(BufferWriter data, {bool dynamic = false}) {
-    gl.bindBuffer(glArrayBuffer, _id);
-
     if (data._cursor > _vboSize) {
-      gl.bufferData(glArrayBuffer, data._cursor, data._pointer.cast(), dynamic ? glDynamicDraw : glStaticDraw);
+      gl.namedBufferData(_id, data._cursor, data._pointer.cast(), dynamic ? glDynamicDraw : glStaticDraw);
       _vboSize = data._cursor;
     } else {
-      gl.bufferSubData(glArrayBuffer, 0, data._cursor, data._pointer.cast());
+      gl.namedBufferSubData(_id, 0, data._cursor, data._pointer.cast());
     }
-
-    gl.bindBuffer(glArrayBuffer, 0);
   }
+
+  @Deprecated("Prefer DSA")
+  void bind() => gl.bindBuffer(glArrayBuffer, _id);
+  @Deprecated("Prefer DSA")
+  void unbind() => gl.bindBuffer(glArrayBuffer, 0);
 
   void delete() {
     final idPointer = malloc<UnsignedInt>();
-    idPointer[0] = _id;
+    idPointer.value = _id;
     gl.deleteBuffers(1, idPointer);
     malloc.free(idPointer);
   }
@@ -97,7 +85,7 @@ class GlVertexArray {
 
   GlVertexArray() {
     final idPointer = calloc<UnsignedInt>();
-    gl.genVertexArrays(1, idPointer);
+    gl.createVertexArrays(1, idPointer);
     _id = idPointer.value;
   }
 
@@ -117,7 +105,7 @@ class GlVertexArray {
 
   void delete() {
     final idPointer = malloc<UnsignedInt>();
-    idPointer[0] = _id;
+    idPointer.value = _id;
     gl.deleteVertexArrays(1, idPointer);
     malloc.free(idPointer);
   }
@@ -129,6 +117,7 @@ class BufferWriter {
 
   late ByteData _data;
   late Pointer<Uint8> _pointer;
+
   int _cursor = 0;
 
   BufferWriter([int initialSize = 64]) {

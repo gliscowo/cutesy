@@ -121,9 +121,8 @@ class Font {
       }
     }
 
-    gl.bindTexture(glTexture2d, texture);
     gl.pixelStorei(glUnpackAlignment, 1);
-    gl.texSubImage2D(glTexture2d, 0, u, v, width, rows, glRgb, glUnsignedByte, pixelBuffer.cast());
+    gl.textureSubImage2D(texture, 0, u, v, width, rows, glRgb, glUnsignedByte, pixelBuffer.cast());
 
     malloc.free(pixelBuffer);
 
@@ -161,20 +160,18 @@ class Font {
 
   static int _createGlyphAtlasTexture() {
     final texture = malloc<UnsignedInt>();
-    gl.genTextures(1, texture);
+    gl.createTextures(glTexture2d, 1, texture);
     final textureId = texture.value;
     malloc.free(texture);
 
-    gl.bindTexture(glTexture2d, textureId);
-
     gl.pixelStorei(glUnpackAlignment, 1);
-    gl.texImage2D(glTexture2d, 0, glRgb, 1024, 1024, 0, glRgb, glUnsignedByte, nullptr);
-    gl.generateMipmap(glTexture2d);
+    gl.textureStorage2D(textureId, 8, glRgb8, 1024, 1024);
+    gl.generateTextureMipmap(textureId);
 
-    gl.texParameteri(glTexture2d, glTextureWrapS, glClampToEdge);
-    gl.texParameteri(glTexture2d, glTextureWrapT, glClampToEdge);
-    gl.texParameteri(glTexture2d, glTextureMinFilter, glLinear);
-    gl.texParameteri(glTexture2d, glTextureMagFilter, glLinear);
+    gl.textureParameteri(textureId, glTextureWrapS, glClampToEdge);
+    gl.textureParameteri(textureId, glTextureWrapT, glClampToEdge);
+    gl.textureParameteri(textureId, glTextureMinFilter, glLinear);
+    gl.textureParameteri(textureId, glTextureMagFilter, glLinear);
 
     return textureId;
   }
@@ -230,8 +227,8 @@ class TextRenderer {
 
     color ??= Color.white;
     _program
-      ..use()
-      ..uniformMat4("uProjection", projection);
+      ..uniformMat4("uProjection", projection)
+      ..use();
 
     final buffers = <int, MeshBuffer<TextVertexFunction>>{};
     MeshBuffer<TextVertexFunction> buffer(int texture) {
@@ -264,11 +261,10 @@ class TextRenderer {
         ..vertex(xPos + width, yPos + height, u1, v1, glyphColor);
     }
 
-    gl.activeTexture(glTexture0);
     gl.blendFunc(glSrc1Color, glOneMinusSrc1Color);
 
     buffers.forEach((texture, mesh) {
-      gl.bindTexture(glTexture2d, texture);
+      mesh.program.uniformSampler("sText", texture, 0);
       mesh
         ..upload(dynamic: true)
         ..draw();

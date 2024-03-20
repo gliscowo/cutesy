@@ -37,6 +37,18 @@ class GlShader {
     gl.getShaderiv(_id, glCompileStatus, success);
     _logger.info("Shader '${basename(source.path)}' compile success: ${success.value}");
 
+    if (success.value != glTrue) {
+      final logLength = malloc<Int>();
+      gl.getShaderiv(_id, glInfoLogLength, logLength);
+
+      final log = malloc<Char>(logLength.value);
+      gl.getShaderInfoLog(_id, logLength.value, nullptr, log);
+      _logger.severe("Error: ${log.cast<Utf8>().toDartString()}");
+
+      malloc.free(logLength);
+      malloc.free(log);
+    }
+
     malloc.free(sourceString);
     malloc.free(sourceArray);
     malloc.free(success);
@@ -70,7 +82,20 @@ class GlProgram {
 
     final success = malloc<Int>();
     gl.getProgramiv(_id, glLinkStatus, success);
-    _logger.info("Program '$_id' link success: ${success.value}");
+    _logger.info("Program '$name' link success: ${success.value}");
+
+    if (success.value != glTrue) {
+      final logLength = malloc<Int>();
+      gl.getProgramiv(_id, glInfoLogLength, logLength);
+
+      final log = malloc<Char>(logLength.value);
+      gl.getProgramInfoLog(_id, logLength.value, nullptr, log);
+      _logger.severe("Error: ${log.cast<Utf8>().toDartString()}");
+
+      malloc.free(logLength);
+      malloc.free(log);
+    }
+
     malloc.free(success);
   }
 
@@ -79,28 +104,26 @@ class GlProgram {
 
   void uniformMat4(String uniform, Matrix4 value) {
     _floatBuffer.asTypedList(value.storage.length).setRange(0, value.storage.length, value.storage);
-    gl.uniformMatrix4fv(_uniformLocation(uniform), 1, glFalse, _floatBuffer);
+    gl.programUniformMatrix4fv(_id, _uniformLocation(uniform), 1, glFalse, _floatBuffer);
   }
 
   void uniform1f(String uniform, double value) {
-    gl.uniform1f(_uniformLocation(uniform), value);
+    gl.programUniform1f(_id, _uniformLocation(uniform), value);
   }
 
   void uniform2vf(String uniform, Vector2 vec) => uniform2f(uniform, vec.x, vec.y);
   void uniform2f(String uniform, double x, double y) {
-    gl.uniform2f(_uniformLocation(uniform), x, y);
+    gl.programUniform2f(_id, _uniformLocation(uniform), x, y);
   }
 
   void uniform3vf(String uniform, Vector3 vec) => uniform3f(uniform, vec.x, vec.y, vec.z);
   void uniform3f(String uniform, double x, double y, double z) {
-    gl.uniform3f(_uniformLocation(uniform), x, y, z);
+    gl.programUniform3f(_id, _uniformLocation(uniform), x, y, z);
   }
 
   void uniformSampler(String uniform, int texture, int index) {
-    gl.uniform1i(_uniformLocation(uniform), index);
-
-    gl.activeTexture(glTexture0 + index);
-    gl.bindTexture(glTexture2d, texture);
+    gl.programUniform1i(_id, _uniformLocation(uniform), index);
+    gl.bindTextureUnit(0, texture);
   }
 
   int _uniformLocation(String uniform) =>

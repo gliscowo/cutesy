@@ -31,12 +31,12 @@ class ImmediatePrimitiveRenderer {
       {double? outlineThickness}) {
     final buffer = outlineThickness == null ? _roundedBuffer : _roundedOutlineBuffer;
     buffer.program
-      ..use()
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection)
       ..uniform1f("uRadius", radius)
       ..uniform2f("uLocation", x, _context.window.height - y - height)
-      ..uniform2f("uSize", width, height);
+      ..uniform2f("uSize", width, height)
+      ..use();
 
     if (outlineThickness != null) buffer.program.uniform1f("uThickness", outlineThickness);
 
@@ -51,9 +51,9 @@ class ImmediatePrimitiveRenderer {
 
   void rect(double x, double y, double width, double height, Color color, Matrix4 projection) {
     _posColorBuffer.program
-      ..use()
       ..uniformMat4("uTransform", Matrix4.identity())
-      ..uniformMat4("uProjection", projection);
+      ..uniformMat4("uProjection", projection)
+      ..use();
 
     gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
 
@@ -65,22 +65,15 @@ class ImmediatePrimitiveRenderer {
   }
 
   void blur(double x, double y, double width, double height, Color color, Matrix4 projection) {
-    _blurFramebuffer
-      ..bind(read: false)
-      ..clear(Color.black);
-    gl.blitFramebuffer(0, 0, _context.window.width, _context.window.height, 0, 0, _blurFramebuffer.width,
-        _blurFramebuffer.height, glColorBufferBit, glLinear);
-    _blurFramebuffer.unbind(read: false);
+    _blurFramebuffer.clear(color: Color.black);
+    gl.blitNamedFramebuffer(0, _blurFramebuffer.fbo, 0, 0, _context.window.width, _context.window.height, 0, 0,
+        _blurFramebuffer.width, _blurFramebuffer.height, glColorBufferBit, glLinear);
 
     _blurBuffer.program
-      ..use()
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection)
       ..uniformSampler("uInput", _blurFramebuffer.colorAttachment, 0)
-      ..uniform2f("uInputResolution", _blurFramebuffer.width.toDouble(), _blurFramebuffer.height.toDouble())
-      ..uniform1f("uDirections", 16)
-      ..uniform1f("uQuality", 3)
-      ..uniform1f("uSize", 5);
+      ..use();
 
     gl.disable(glBlend);
 
@@ -95,11 +88,11 @@ class ImmediatePrimitiveRenderer {
 
   void circle(double x, double y, double radius, Color color, Matrix4 projection) {
     _circleBuffer.program
-      ..use()
       ..uniformMat4("uTransform", Matrix4.identity())
       ..uniformMat4("uProjection", projection)
       ..uniform2f("uLocation", x, _context.window.height - y - radius * 2)
-      ..uniform1f("uRadius", radius);
+      ..uniform1f("uRadius", radius)
+      ..use();
 
     gl.blendFunc(glSrcAlpha, glOneMinusSrcAlpha);
 

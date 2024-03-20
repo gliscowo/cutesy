@@ -1,34 +1,27 @@
 #version 330 core
 
 uniform sampler2D uInput;
-uniform vec2 uInputResolution;
-
-uniform float uDirections;
-uniform float uQuality;
-uniform float uSize;
 
 in vec4 vColor;
 out vec4 fragColor;
 
-// shader adapted from https://www.shadertoy.com/view/Xltfzj
+const float kernel[49] = float[49] (
+    0.0114,	0.0150,	0.0176,	0.0186,	0.0176,	0.0150,	0.0114,
+    0.0150,	0.0197,	0.0232,	0.0246,	0.0232,	0.0197,	0.0150,
+    0.0176,	0.0232,	0.0274,	0.0290,	0.0274,	0.0232,	0.0176,
+    0.0186,	0.0246,	0.0290,	0.0306,	0.0290,	0.0246,	0.0186,
+    0.0176,	0.0232,	0.0274,	0.0290,	0.0274,	0.0232,	0.0176,
+    0.0150,	0.0197,	0.0232,	0.0246,	0.0232,	0.0197,	0.0150,
+    0.0114,	0.0150,	0.0176,	0.0186,	0.0176,	0.0150,	0.0114
+);
 
 void main() {
-    #define TAU 6.28318530718
-
-    vec2 Radius = uSize / uInputResolution.xy;
-
-    // Normalized pixel coordinates (from 0 to 1)
-    vec2 uv = gl_FragCoord.xy / uInputResolution.xy;
-    // Pixel colour
-    vec4 color = texture(uInput, uv);
-
-    // Blur calculations
-    for (float d = 0.0; d < TAU; d += TAU / uDirections) {
-        for (float i = 1.0 / uQuality; i <= 1.0; i += 1.0 / uQuality) {
-            color += texture(uInput, uv + vec2(cos(d), sin(d)) * Radius * i);
+    vec4 color = vec4(0);
+    for (int x = -3; x <= 3; x++) {
+        for (int y = -3; y <= 3; y++) {
+            color += kernel[(x + 3) * 7 + (y + 3)] * texelFetch(uInput, ivec2(gl_FragCoord.x + x, gl_FragCoord.y + y), 0);
         }
     }
 
-    // Output to screen
-    fragColor = (color / (uQuality * uDirections)) * vColor;
+    fragColor = color * vColor;
 }

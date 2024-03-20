@@ -192,23 +192,15 @@ void main(List<String> args) {
 
     lastTime = glfw.getTime();
 
-    textRenderer.drawText(
-      5,
-      5,
-      Text.string("$lastFps FPS", style: TextStyle(fontFamily: "CascadiaCode")),
-      15,
-      projection,
-      color: Color.black,
-    );
+    Text metric(String value, String unit) => Text([
+          StyledString(value, style: TextStyle(fontFamily: "CascadiaCode", bold: true, color: Color.ofRgb(0x42FFC2))),
+          StyledString(" $unit",
+              style: TextStyle(fontFamily: "CascadiaCode", bold: true, color: Color.ofRgb(0x57B2FF))),
+        ]);
 
-    textRenderer.drawText(
-      5,
-      25,
-      Text.string("${(delta * 1000).toStringAsPrecision(2)} ms", style: TextStyle(fontFamily: "CascadiaCode")),
-      15,
-      projection,
-      color: Color.black,
-    );
+    textRenderer.drawText(5, 5, metric("$lastFps", "FPS"), 16, projection, color: Color.black);
+    textRenderer.drawText(5, 23, metric((delta * 1000).toStringAsPrecision(2), "ms"), 16, projection,
+        color: Color.black);
 
     final drawContext = DrawContext(renderContext, primitiveRenderer, projection, textRenderer);
     ui.render(drawContext, delta);
