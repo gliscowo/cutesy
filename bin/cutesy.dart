@@ -60,6 +60,7 @@ void main(List<String> args) {
 
   glfw.makeContextCurrent(_window.handle);
   attachGlErrorCallback();
+  minGlDebugSeverity = glDebugSeverityLow;
 
   final projection = makeOrthographicMatrix(0, _window.width.toDouble(), _window.height.toDouble(), 0, 0, 1000);
 

@@ -27,6 +27,9 @@ const Map<int, String> _glSeverities = {
   glDebugSeverityHigh: "HIGH",
 };
 
+int minGlDebugSeverity = glDebugSeverityNotification;
+bool printGlDebugStacktrace = false;
+
 void attachGlErrorCallback() {
   gl.enable(glDebugOutput);
   gl.enable(glDebugOutputSynchronous);
@@ -37,6 +40,9 @@ final Logger _logger = Logger("cutesy.opengl");
 
 void _onGlError(
     int source, int type, int id, int severity, int length, Pointer<Char> message, Pointer<Void> userParam) {
+  if (severity < minGlDebugSeverity) return;
+
   _logger.warning(
       "OpenGL Debug Message, type ${_glMessageTypes[type]} severity ${_glSeverities[severity]}: ${message.cast<Utf8>().toDartString()}");
+  if (printGlDebugStacktrace) _logger.warning(StackTrace.current);
 }
