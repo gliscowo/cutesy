@@ -1,4 +1,5 @@
-import '../../color.dart';
+import 'package:diamond_gl/diamond_gl.dart';
+
 import '../../context.dart';
 import '../../text/text.dart';
 import '../animation.dart';

@@ -1,9 +1,8 @@
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'gl/shader.dart';
 import 'primitive_renderer.dart';
 import 'text/text_renderer.dart';
-import 'window.dart';
 
 typedef ProgramLookup = GlProgram Function(String);
 

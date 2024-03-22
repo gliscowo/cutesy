@@ -3,17 +3,13 @@ import 'dart:io';
 
 import 'package:dart_glfw/dart_glfw.dart';
 import 'package:dart_opengl/dart_opengl.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:ffi/ffi.dart' as ffi;
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'color.dart';
 import 'context.dart';
-import 'gl/debug.dart';
-import 'gl/shader.dart';
-import 'gl/vertex_buffer.dart';
-import 'gl/vertex_descriptor.dart';
 import 'obj.dart';
 import 'primitive_renderer.dart';
 import 'text/text.dart';
@@ -32,7 +28,7 @@ import 'ui/positioning.dart';
 import 'ui/sizing.dart';
 import 'ui/surface.dart';
 import 'ui/ui_controller.dart';
-import 'window.dart';
+import 'vertex_descriptors.dart';
 
 typedef GLFWerrorfun = ffi.Void Function(ffi.Int, ffi.Pointer<ffi.Char>);
 
@@ -43,14 +39,24 @@ late final Window _window;
 final Logger _logger = Logger("cutesy");
 final Logger _glfwLogger = Logger("cutesy.glfw");
 
-final gl = loadOpenGL();
-final glfw = loadGLFW("resources/lib/libglfw.so.3");
+Future<GlProgram> vertFragProgram(String name, String vert, String frag) async {
+  final shaders = await Future.wait([
+    GlShader.fromFile(File("resources/shader/$vert.vert"), GlShaderType.vertex),
+    GlShader.fromFile(File("resources/shader/$frag.frag"), GlShaderType.fragment),
+  ]);
 
-void main(List<String> args) {
+  return GlProgram(name, shaders);
+}
+
+void main(List<String> args) async {
   Logger.root.level = Level.FINE;
   Logger.root.onRecord.listen((event) {
     print("[${event.loggerName}] (${event.level.toString().toLowerCase()}) ${event.message}");
   });
+
+  loadOpenGL();
+  loadGLFW("resources/lib/libglfw.so.3");
+  initDiamondGL(logger: Logger("cutesy"));
 
   if (glfw.init() != glfwTrue) {
     _logger.severe("GLFW init failed");
@@ -91,15 +97,18 @@ void main(List<String> args) {
     _logger.info("got char: $char");
   });
 
-  final renderContext = RenderContext(_window, [
-    GlProgram.vertexFragment("hsv", "position", "hsv"),
-    GlProgram.vertexFragment("pos_color", "position", "position"),
-    GlProgram.vertexFragment("text", "text", "text"),
-    GlProgram.vertexFragment("rounded_rect", "position", "rounded"),
-    GlProgram.vertexFragment("rounded_rect_outline", "position", "rounded_outline"),
-    GlProgram.vertexFragment("circle", "position", "circle"),
-    GlProgram.vertexFragment("blur", "position", "blur"),
-  ]);
+  final renderContext = RenderContext(
+    _window,
+    await Future.wait([
+      vertFragProgram("hsv", "position", "hsv"),
+      vertFragProgram("pos_color", "position", "position"),
+      vertFragProgram("text", "text", "text"),
+      vertFragProgram("rounded_rect", "position", "rounded"),
+      vertFragProgram("rounded_rect_outline", "position", "rounded_outline"),
+      vertFragProgram("circle", "position", "circle"),
+      vertFragProgram("blur", "position", "blur"),
+    ]),
+  );
 
   final primitiveRenderer = ImmediatePrimitiveRenderer(renderContext);
   final textRenderer = TextRenderer(renderContext, notoSans, {

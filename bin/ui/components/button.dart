@@ -1,8 +1,9 @@
 import 'package:dart_glfw/dart_glfw.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 
-import '../../color.dart';
 import '../../context.dart';
 import '../../text/text.dart';
+import '../animation.dart';
 import '../component.dart';
 import '../math.dart';
 import '../sizing.dart';

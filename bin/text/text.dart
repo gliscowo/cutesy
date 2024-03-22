@@ -1,12 +1,11 @@
 import 'dart:ffi';
 
 import 'package:bidi/bidi.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:meta/meta.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-import '../color.dart';
-import '../cutesy.dart';
 import '../native/harfbuzz.dart';
 import 'text_renderer.dart';
 

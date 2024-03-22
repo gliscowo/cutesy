@@ -1,6 +1,9 @@
 import 'dart:math';
 
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:meta/meta.dart';
+
+import 'math.dart';
 
 abstract interface class Animatable<A extends Animatable<A>> {
   A interpolate(A next, double delta);
@@ -89,12 +92,17 @@ extension Observe<T> on T {
 /// can be propagated to the holder of the property
 ///
 /// @param <A> The type of animatable object this property describes
-class AnimatableProperty<A extends Animatable<A>> extends Observable<A> {
+class AnimatableProperty<A> extends Observable<A> {
+  final A Function(A from, A to, double delta) _interpolator;
   Animation<A>? _animation;
+
+  AnimatableProperty(super.value, this._interpolator) : super.create();
 
   /// Creates a new animatable property with
   /// the given initial value
-  AnimatableProperty.create(super.value) : super.create();
+  static AnimatableProperty<A> fromAnimatable<A extends Animatable<A>>(A initial) {
+    return AnimatableProperty(initial, (from, to, delta) => from.interpolate(to, delta));
+  }
 
   /// Create an animation object which interpolates the state of this
   /// property from the current one to {@code to} in {@code duration}
@@ -109,7 +117,7 @@ class AnimatableProperty<A extends Animatable<A>> extends Observable<A> {
   /// @return The new animation of this property.
   ///
   Animation<A> animate(int duration, Easing easing, A to) {
-    return _animation = Animation(duration, set, easing, value, to);
+    return _animation = Animation(duration, _interpolator, set, easing, value, to);
   }
 
   ///
@@ -132,7 +140,20 @@ class AnimatableProperty<A extends Animatable<A>> extends Observable<A> {
 }
 
 extension Animate<T extends Animatable<T>> on T {
-  AnimatableProperty<T> get animatable => AnimatableProperty.create(this);
+  AnimatableProperty<T> get animatable => AnimatableProperty.fromAnimatable(this);
+}
+
+extension AnimatableColor on Color {
+  AnimatableProperty<Color> get animatable => AnimatableProperty(this, (from, to, delta) => from.interpolate(to, delta));
+
+  Color interpolate(Color next, double delta) {
+    return Color.rgb(
+      r.lerp(delta, next.r),
+      g.lerp(delta, next.g),
+      b.lerp(delta, next.b),
+      a.lerp(delta, next.a),
+    );
+  }
 }
 
 typedef Easing = double Function(double);
@@ -158,13 +179,14 @@ abstract final class Easings {
   }
 }
 
-class Animation<A extends Animatable<A>> {
+class Animation<A> {
   final int _duration;
 
   double _delta = 0;
   AnimationDirection _direction = AnimationDirection.backwards;
   bool looping = false;
 
+  final A Function(A from, A to, double delta) _interpolator;
   final void Function(A) _setter;
   final Easing _easing;
 
@@ -175,9 +197,9 @@ class Animation<A extends Animatable<A>> {
   // final EventStream<Finished> finishedEvents = Finished.newStream();
   // boolean eventInvoked = true;
 
-  Animation(this._duration, this._setter, this._easing, this._from, this._to);
+  Animation(this._duration, this._interpolator, this._setter, this._easing, this._from, this._to);
 
-  static ComposedAnimation compose(List<Animation> elements) => ComposedAnimation._(elements);
+  static ComposedAnimation compose(List<Animation<dynamic>> elements) => ComposedAnimation._(elements);
 
   void update(double delta) {
     if (_delta == _direction.targetDelta) {
@@ -195,7 +217,7 @@ class Animation<A extends Animatable<A>> {
     }
 
     _delta = (_delta + (delta * 1000 / _duration) * _direction.multiplier).clamp(0, 1);
-    _setter(_from.interpolate(_to, _easing(_delta)));
+    _setter(_interpolator(_from, _to, _easing(_delta)));
   }
 
   void forwards() => this._setDirection(AnimationDirection.forwards);
@@ -230,7 +252,7 @@ class Animation<A extends Animatable<A>> {
 }
 
 class ComposedAnimation {
-  final List<Animation> _elements;
+  final List<Animation<dynamic>> _elements;
 
   ComposedAnimation._(this._elements);
 

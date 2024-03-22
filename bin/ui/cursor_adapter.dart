@@ -1,9 +1,8 @@
 import 'dart:ffi';
 
 import 'package:dart_glfw/dart_glfw.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 
-import '../cutesy.dart';
-import '../window.dart';
 import 'component.dart';
 
 class CursorAdapter {

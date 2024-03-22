@@ -2,11 +2,10 @@ import 'dart:async';
 
 import 'package:dart_glfw/dart_glfw.dart';
 import 'package:dart_opengl/dart_opengl.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 
 import '../context.dart';
-import '../cutesy.dart';
 import '../text/text_renderer.dart';
-import '../window.dart';
 import 'component.dart';
 import 'cursor_adapter.dart';
 import 'sizing.dart';

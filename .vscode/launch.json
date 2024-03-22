@@ -9,6 +9,15 @@
             "request": "launch",
             "type": "dart",
             "program": "bin/cutesy.dart"
+        },
+        {
+            "name": "cutesy (renderdoc)",
+            "request": "launch",
+            "type": "dart",
+            "program": "bin/cutesy.dart",
+            "env": {
+                "LD_PRELOAD": "/home/lily/Downloads/renderdoc_1.31/lib/librenderdoc.so"
+            }
         }
     ]
 }

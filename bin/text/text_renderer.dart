@@ -3,19 +3,16 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:dart_opengl/dart_opengl.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
-import '../color.dart';
 import '../context.dart';
-import '../cutesy.dart';
-import '../gl/shader.dart';
-import '../gl/vertex_buffer.dart';
-import '../gl/vertex_descriptor.dart';
 import '../native/freetype.dart';
 import '../native/harfbuzz.dart';
 import '../ui/math.dart';
+import '../vertex_descriptors.dart';
 import 'text.dart';
 
 final freetype = FreetypeLibrary(DynamicLibrary.open("libfreetype.so"));

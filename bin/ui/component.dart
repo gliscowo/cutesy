@@ -1,11 +1,10 @@
 import 'package:dart_glfw/dart_glfw.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:meta/meta.dart';
 
-import '../color.dart';
 import '../context.dart';
 import '../text/text.dart';
 import '../text/text_renderer.dart';
-import '../window.dart';
 import 'animation.dart';
 import 'events.dart';
 import 'focus_handler.dart';

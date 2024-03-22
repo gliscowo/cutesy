@@ -1,13 +1,13 @@
 import 'dart:math';
 
 import 'package:dart_glfw/dart_glfw.dart';
+import 'package:diamond_gl/diamond_gl.dart';
 import 'package:ffi/ffi.dart';
 import 'package:vector_math/vector_math.dart';
 
-import '../../color.dart';
 import '../../context.dart';
-import '../../cutesy.dart';
 import '../../text/text.dart';
+import '../animation.dart';
 import '../component.dart';
 
 class TextField extends Component {
