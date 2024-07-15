@@ -4,9 +4,9 @@ import 'dart:math';
 import 'package:diamond_gl/diamond_gl.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../../../vertex_descriptors.dart';
 import '../../context.dart';
 import '../../text/text.dart';
-import '../../vertex_descriptors.dart';
 import '../animation.dart';
 import '../component.dart';
 import '../sizing.dart';

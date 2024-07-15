@@ -446,10 +446,10 @@ abstract class ParentComponent extends Component {
   FocusHandler? _focusHandler;
 
   /// How this component vertically arranges its children
-  final Observable<VerticalAlignment> verticalAlignment = Observable.create(VerticalAlignment.top);
+  final Observable<VerticalAlignment> verticalAlignment = Observable(VerticalAlignment.top);
 
   /// How this component horizontally arranges its children
-  final Observable<HorizontalAlignment> horizontalAlignment = Observable.create(HorizontalAlignment.left);
+  final Observable<HorizontalAlignment> horizontalAlignment = Observable(HorizontalAlignment.left);
 
   /// The internal padding of this component
   final AnimatableProperty<Insets> padding = Insets.zero.animatable;
@@ -873,16 +873,11 @@ enum VerticalAlignment {
   center,
   bottom;
 
-  int align(int componentWidth, int span) {
-    switch (this) {
-      case VerticalAlignment.top:
-        return 0;
-      case VerticalAlignment.center:
-        return span ~/ 2 - componentWidth ~/ 2;
-      case VerticalAlignment.bottom:
-        return span - componentWidth;
-    }
-  }
+  int align(int componentWidth, int span) => switch (this) {
+        VerticalAlignment.top => 0,
+        VerticalAlignment.center => span ~/ 2 - componentWidth ~/ 2,
+        VerticalAlignment.bottom => span - componentWidth
+      };
 }
 
 enum HorizontalAlignment {
@@ -890,16 +885,11 @@ enum HorizontalAlignment {
   center,
   right;
 
-  int align(int componentWidth, int span) {
-    switch (this) {
-      case HorizontalAlignment.left:
-        return 0;
-      case HorizontalAlignment.center:
-        return span ~/ 2 - componentWidth ~/ 2;
-      case HorizontalAlignment.right:
-        return span - componentWidth;
-    }
-  }
+  int align(int componentWidth, int span) => switch (this) {
+        HorizontalAlignment.left => 0,
+        HorizontalAlignment.center => span ~/ 2 - componentWidth ~/ 2,
+        HorizontalAlignment.right => span - componentWidth
+      };
 }
 
 enum CursorStyle {

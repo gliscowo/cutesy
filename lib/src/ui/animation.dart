@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:diamond_gl/diamond_gl.dart';
 import 'package:meta/meta.dart';
 
+import 'events.dart';
 import 'math.dart';
 
 abstract interface class Animatable<A extends Animatable<A>> {
@@ -11,50 +12,37 @@ abstract interface class Animatable<A extends Animatable<A>> {
 
 typedef Observer<T> = void Function(T value);
 
-///
 /// A container which allows observing changes to its value.
-/// Every time the value is <i>changed</i>, i.e.
-/// {@code Objects.equals(value, newValue)} evaluates to {@code false},
-/// all observers added via {@link #observe(Consumer)} will be notified
+/// Every time the value is *changed*, i.e. [==] evaluates to `false`,
+/// all observers added via [observe] will be notified
 /// and passed the new value
 ///
-/// @param <T> The type of object this observable holds
-/// @see #observeAll(Runnable, Observable[])
-///
+/// To watch multiple observables for *any* change (without
+/// evaluating the value), use [observeAll]
 class Observable<T> {
   final List<Observer<T>> _observers = [];
   T _value;
 
-  /// Creates a new observable container with
-  /// the given initial value
-  Observable.create(this._value);
+  /// Create a new observable container holding [_value]
+  Observable(this._value);
 
-  ///
-  /// Notify the given observer whenever <i>any</i> of the given observables
+  /// Notify the given observer whenever *any* of the given observables
   /// are updated. Context-less version {@link #observeAll(Consumer, Observable[])} which
   /// allows observing multiple observables of different types
   ///
   /// @param observer    The observer to notify
   /// @param observables The list of observable to observe
-  ///
   static void observeAll(void Function() observer, List<Observable<dynamic>> observables) {
     for (var observable in observables) {
       observable.observe((_) => observer());
     }
   }
 
-  ///
-  /// @return The current value stored in this container
-  ///
+  /// The current value stored in this container
   T get value => _value;
 
-  ///
-  /// Change the value stored in this container to {@code newValue}.
-  /// Observers will only be notified if {@code Objects.equals(value, newValue)}
-  /// evaluates to {@code false}
-  ///
-  /// @param newValue The new value to store
-  ///
+  /// Change the value stored in this container to [newValue].
+  /// Only if [==] evaluates to `false` will observers be notified
   void set(T newValue) {
     final oldValue = this.value;
     _value = newValue;
@@ -66,10 +54,8 @@ class Observable<T> {
 
   void call(T newValue) => set(newValue);
 
-  ///
   /// Add an observer function to be run every time
   /// the value stored in this container changes
-  ///
   void observe(Observer<T> observer) {
     _observers.add(observer);
   }
@@ -83,56 +69,40 @@ class Observable<T> {
 }
 
 extension Observe<T> on T {
-  Observable<T> get observable => Observable.create(this);
+  Observable<T> get observable => Observable(this);
 }
 
 /// A container which holds an animatable object,
 /// used to manage to properties of UI components. Extends
-/// the {@link Observable} container so that changes in its value
+/// the [Observable] container so that changes in its value
 /// can be propagated to the holder of the property
-///
-/// @param <A> The type of animatable object this property describes
 class AnimatableProperty<A> extends Observable<A> {
   final A Function(A from, A to, double delta) _interpolator;
   Animation<A>? _animation;
 
-  AnimatableProperty(super.value, this._interpolator) : super.create();
+  AnimatableProperty(super.value, this._interpolator);
 
-  /// Creates a new animatable property with
-  /// the given initial value
+  /// Create a new animatable property with value [initial]
   static AnimatableProperty<A> fromAnimatable<A extends Animatable<A>>(A initial) {
     return AnimatableProperty(initial, (from, to, delta) => from.interpolate(to, delta));
   }
 
   /// Create an animation object which interpolates the state of this
-  /// property from the current one to {@code to} in {@code duration}
-  /// milliseconds, applying the given easing
-  /// <p>
+  /// property from the current one to [to] in [duration]
+  /// milliseconds, applying [easing]
+  ///
   /// This method replaces the current animation object of
   /// this property - it will not be updated anymore
-  ///
-  /// @param duration The duration of the animation to create, in milliseconds
-  /// @param easing   The easing method to use
-  /// @param to       The target state of this property
-  /// @return The new animation of this property.
-  ///
   Animation<A> animate(int duration, Easing easing, A to) {
     return _animation = Animation(duration, _interpolator, set, easing, value, to);
   }
 
-  ///
-  /// @return The current animation object of this property,
-  /// potentially {@code null} if {@link #animate(int, Easing, Animatable)}
-  /// was never called
-  ///
+  /// The current animation object of this property,
+  /// potentially `null` if [animate] was never called
   Animation<A>? get animation => _animation;
 
-  ///
-  /// Update the currently stored animation
-  /// object of this property
-  ///
-  /// @param delta The duration of the last frame, in partial ticks
-  ///
+  /// Update the currently stored animation object of this property,
+  /// assuming that [delta] seconds have passed since the last call
   void update(double delta) {
     if (_animation == null) return;
     _animation!.update(delta);
@@ -144,7 +114,8 @@ extension Animate<T extends Animatable<T>> on T {
 }
 
 extension AnimatableColor on Color {
-  AnimatableProperty<Color> get animatable => AnimatableProperty(this, (from, to, delta) => from.interpolate(to, delta));
+  AnimatableProperty<Color> get animatable =>
+      AnimatableProperty(this, (from, to, delta) => from.interpolate(to, delta));
 
   Color interpolate(Color next, double delta) {
     return Color.rgb(
@@ -179,6 +150,8 @@ abstract final class Easings {
   }
 }
 
+typedef AnimationFinished = ({AnimationDirection direction, bool looping});
+
 class Animation<A> {
   final int _duration;
 
@@ -193,9 +166,8 @@ class Animation<A> {
   final A _from;
   final A _to;
 
-  // TODO: animation events
-  // final EventStream<Finished> finishedEvents = Finished.newStream();
-  // boolean eventInvoked = true;
+  final EventStream<AnimationFinished, void> _finishedEvents = EventStream.withoutResult();
+  bool _eventInvoked = true;
 
   Animation(this._duration, this._interpolator, this._setter, this._easing, this._from, this._to);
 
@@ -203,11 +175,10 @@ class Animation<A> {
 
   void update(double delta) {
     if (_delta == _direction.targetDelta) {
-      // TODO: animation events
-      // if (!_eventInvoked) {
-      //     _finishedEvents.sink().onFinished(_direction, _looping);
-      //     _eventInvoked = true;
-      // }
+      if (!_eventInvoked) {
+        _finishedEvents.dispatch((direction: _direction, looping: looping));
+        _eventInvoked = true;
+      }
 
       if (looping) {
         reverse();
@@ -228,27 +199,10 @@ class Animation<A> {
     if (_direction == direction) return;
     this._direction = direction;
 
-    // TODO: animation events
-    // this.eventInvoked = false;
+    _eventInvoked = false;
   }
 
   AnimationDirection get direction => _direction;
-
-  // public EventSource<Finished> finished() {
-  //     return this.finishedEvents.source();
-  // }
-
-  // public interface Finished {
-  //     void onFinished(Direction direction, boolean looping);
-
-  //     static EventStream<Finished> newStream() {
-  //         return new EventStream<>(subscribers -> (direction, looping) -> {
-  //             for (var subscriber : subscribers) {
-  //                 subscriber.onFinished(direction, looping);
-  //             }
-  //         });
-  //     }
-  // }
 }
 
 class ComposedAnimation {

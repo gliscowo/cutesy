@@ -14,7 +14,7 @@ class FlowLayout extends ParentComponent {
   final List<Component> _children = [];
   late final List<Component> _childrenView = UnmodifiableListView(_children);
 
-  final Observable<int> gap = Observable.create(0);
+  final Observable<int> gap = 0.observable;
 
   final _LayoutFunc _algorithm;
   Size _contentSize = Size.zero;

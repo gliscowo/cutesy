@@ -8,11 +8,11 @@ import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../../vertex_descriptors.dart';
 import '../context.dart';
 import '../native/freetype.dart';
 import '../native/harfbuzz.dart';
 import '../ui/math.dart';
-import '../vertex_descriptors.dart';
 import 'text.dart';
 
 final freetype = FreetypeLibrary(DynamicLibrary.open("libfreetype.so"));

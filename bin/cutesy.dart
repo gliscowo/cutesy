@@ -1,6 +1,8 @@
 import 'dart:ffi' as ffi;
 import 'dart:io';
 
+import 'package:cutesy/cutesy.dart';
+import 'package:cutesy/vertex_descriptors.dart';
 import 'package:dart_glfw/dart_glfw.dart';
 import 'package:dart_opengl/dart_opengl.dart';
 import 'package:diamond_gl/diamond_gl.dart';
@@ -9,26 +11,7 @@ import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'context.dart';
 import 'obj.dart';
-import 'primitive_renderer.dart';
-import 'text/text.dart';
-import 'text/text_renderer.dart';
-import 'ui/animation.dart';
-import 'ui/component.dart';
-import 'ui/components/button.dart';
-import 'ui/components/label.dart';
-import 'ui/components/metrics.dart';
-import 'ui/components/slider.dart';
-import 'ui/components/text_field.dart';
-import 'ui/containers/flow_layout.dart';
-import 'ui/insets.dart';
-import 'ui/inspector.dart';
-import 'ui/positioning.dart';
-import 'ui/sizing.dart';
-import 'ui/surface.dart';
-import 'ui/ui_controller.dart';
-import 'vertex_descriptors.dart';
 
 typedef GLFWerrorfun = ffi.Void Function(ffi.Int, ffi.Pointer<ffi.Char>);
 
