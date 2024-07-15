@@ -18,7 +18,8 @@ class UIController<R extends ParentComponent> {
 
   late final R _root;
 
-  UIController.ofWindow(this._window, this._textRenderer, R Function(Sizing, Sizing) rootComponentFactory) {
+  UIController.ofWindow(
+      this._window, this._textRenderer, R Function(Sizing horizontal, Sizing vertical) rootComponentFactory) {
     _cursorAdapter = CursorAdapter.ofWindow(_window);
     _root = rootComponentFactory(Sizing.fill(), Sizing.fill());
 
