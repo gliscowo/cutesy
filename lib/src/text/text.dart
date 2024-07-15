@@ -1,9 +1,7 @@
 import 'dart:ffi';
 
-import 'package:bidi/bidi.dart';
 import 'package:diamond_gl/diamond_gl.dart';
 import 'package:ffi/ffi.dart';
-import 'package:meta/meta.dart';
 import 'package:vector_math/vector_math_64.dart';
 
 import '../native/harfbuzz.dart';
@@ -34,28 +32,25 @@ class Text {
   Text.string(String value, {TextStyle style = const TextStyle()}) : this([StyledString(value, style: style)]);
 
   Text(this._segments) {
-    if (_segments.isEmpty) throw ArgumentError("Text must have at least one segment");
+    if (_segments.isEmpty) throw ArgumentError('Text must have at least one segment');
   }
 
-  @internal
   List<ShapedGlyph> get glyphs => _shapedGlyphs;
 
-  @internal
   bool get isShaped => _isShaped;
 
-  @internal
   void shape(FontLookup fontLookup) {
     int cursorX = 0, cursorY = 0;
 
     final features = malloc<hb_feature>();
-    "calt on".withAsNative((flag) => harfbuzz.feature_from_string(flag.cast(), -1, features));
+    'calt on'.withAsNative((flag) => harfbuzz.feature_from_string(flag.cast(), -1, features));
 
     for (final segment in _segments) {
       final segmentFont = fontLookup(segment.style.fontFamily);
 
       final buffer = harfbuzz.buffer_create();
 
-      final bufferContent = String.fromCharCodes(logicalToVisual(segment.content)).toNativeUtf16();
+      final bufferContent = /*String.fromCharCodes(logicalToVisual(*/ segment.content /*))*/ .toNativeUtf16();
       harfbuzz.buffer_add_utf16(buffer, bufferContent.cast(), -1, 0, -1);
       malloc.free(bufferContent);
 

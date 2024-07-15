@@ -8,17 +8,15 @@ import 'package:ffi/ffi.dart';
 import 'package:logging/logging.dart';
 import 'package:vector_math/vector_math.dart';
 
+import '../../cutesy.dart';
 import '../../vertex_descriptors.dart';
-import '../context.dart';
 import '../native/freetype.dart';
 import '../native/harfbuzz.dart';
-import '../ui/math.dart';
-import 'text.dart';
 
-final freetype = FreetypeLibrary(DynamicLibrary.open("libfreetype.so"));
-final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open("libharfbuzz.so.0"));
+final freetype = FreetypeLibrary(DynamicLibrary.open('libfreetype.so'));
+final harfbuzz = HarfbuzzLibrary(DynamicLibrary.open('libharfbuzz.so.0'));
 
-final Logger _logger = Logger("cutesy.text_handler");
+final Logger _logger = Logger('cutesy.text_handler');
 
 class FontFamily {
   final List<Font> _allFonts = [];
@@ -27,10 +25,10 @@ class FontFamily {
   late final Font boldFont, italicFont, boldItalicFont;
 
   FontFamily(String familyName, int size) {
-    final fontFiles = Directory("resources/font/$familyName")
+    final fontFiles = Directory('resources/font/$familyName')
         .listSync()
         .whereType<File>()
-        .where((file) => file.path.endsWith(".otf") || file.path.endsWith(".ttf"));
+        .where((file) => file.path.endsWith('.otf') || file.path.endsWith('.ttf'));
 
     for (final font in fontFiles) {
       _allFonts.add(Font(font.absolute.path, size));
@@ -38,15 +36,15 @@ class FontFamily {
 
     Font Function() defaultAndWarn(String type) {
       return () {
-        _logger.warning("Could not find a '$type' font in family $familyName");
+        _logger.warning('Could not find a "$type" font in family $familyName');
         return defaultFont;
       };
     }
 
     defaultFont = _allFonts.firstWhere((font) => !font.bold && !font.italic, orElse: () => _allFonts.first);
-    boldFont = _allFonts.firstWhere((font) => font.bold && !font.italic, orElse: defaultAndWarn("bold"));
-    italicFont = _allFonts.firstWhere((font) => !font.bold && font.italic, orElse: defaultAndWarn("italic"));
-    boldItalicFont = _allFonts.firstWhere((font) => font.bold && font.italic, orElse: defaultAndWarn("bold & italic"));
+    boldFont = _allFonts.firstWhere((font) => font.bold && !font.italic, orElse: defaultAndWarn('bold'));
+    italicFont = _allFonts.firstWhere((font) => !font.bold && font.italic, orElse: defaultAndWarn('italic'));
+    boldItalicFont = _allFonts.firstWhere((font) => font.bold && font.italic, orElse: defaultAndWarn('bold & italic'));
   }
 
   Font fontForStyle(TextStyle style) {
@@ -76,7 +74,7 @@ class Font {
 
     final face = malloc<FT_Face>();
     if (freetype.New_Face(_ftLibrary, nativePath, 0, face) != 0) {
-      throw ArgumentError.value(path, "path", "Could not load font");
+      throw ArgumentError.value(path, 'path', 'Could not load font');
     }
 
     final faceStruct = face.value.ref;
@@ -98,7 +96,7 @@ class Font {
   // TODO consider switching to SDF rendering
   Glyph _loadGlyph(int index) {
     if (freetype.Load_Glyph(_ftFace, index, FT_LOAD_RENDER | FT_LOAD_TARGET_LCD | FT_LOAD_COLOR) != 0) {
-      throw Exception("Failed to load glyph ${String.fromCharCode(index)}");
+      throw Exception('Failed to load glyph ${String.fromCharCode(index)}');
     }
 
     final width = _ftFace.ref.glyph.ref.bitmap.width ~/ 3;
@@ -120,6 +118,7 @@ class Font {
 
     gl.pixelStorei(glUnpackAlignment, 1);
     gl.textureSubImage2D(texture, 0, u, v, width, rows, glRgb, glUnsignedByte, pixelBuffer.cast());
+    gl.generateTextureMipmap(texture);
 
     malloc.free(pixelBuffer);
 
@@ -163,7 +162,6 @@ class Font {
 
     gl.pixelStorei(glUnpackAlignment, 1);
     gl.textureStorage2D(textureId, 8, glRgb8, 1024, 1024);
-    gl.generateTextureMipmap(textureId);
 
     gl.textureParameteri(textureId, glTextureWrapS, glClampToEdge);
     gl.textureParameteri(textureId, glTextureWrapT, glClampToEdge);
@@ -180,7 +178,7 @@ class Font {
 
     final ft = malloc<FT_Library>();
     if (freetype.Init_FreeType(ft) != 0) {
-      throw "Failed to initialize FreeType library";
+      throw 'Failed to initialize FreeType library';
     }
 
     return _ftInstance = ft.value;
@@ -203,7 +201,7 @@ class TextRenderer {
   final Map<String, FontFamily> _fontStorage;
 
   TextRenderer(RenderContext context, this._defaultFont, Map<String, FontFamily> fontStorage)
-      : _program = context.findProgram("text"),
+      : _program = context.findProgram('text'),
         _fontStorage = Map.unmodifiable(fontStorage);
 
   FontFamily getFont(String? familyName) =>
@@ -224,7 +222,7 @@ class TextRenderer {
 
     color ??= Color.white;
     _program
-      ..uniformMat4("uProjection", projection)
+      ..uniformMat4('uProjection', projection)
       ..use();
 
     final buffers = <int, MeshBuffer<TextVertexFunction>>{};
@@ -261,7 +259,7 @@ class TextRenderer {
     gl.blendFunc(glSrc1Color, glOneMinusSrc1Color);
 
     buffers.forEach((texture, mesh) {
-      mesh.program.uniformSampler("sText", texture, 0);
+      mesh.program.uniformSampler('sText', texture, 0);
       mesh
         ..upload(dynamic: true)
         ..draw();
