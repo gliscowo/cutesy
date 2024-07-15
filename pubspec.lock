@@ -111,8 +111,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "0a1ce95"
-      resolved-ref: "0a1ce951ff1724741cd600d61c395c58e2c55e53"
+      ref: afaff18
+      resolved-ref: afaff18b5ec2aeb6bfc9acd17da31a10f2afffb4
       url: "https://github.com/gliscowo/diamond_gl.git"
     source: git
     version: "1.0.0"
