@@ -8,9 +8,9 @@ import 'package:vector_math/vector_math.dart';
 import '../../context.dart';
 import '../../text/text.dart';
 import '../animation.dart';
-import '../component.dart';
+import '../widget.dart';
 
-class TextField extends Component {
+class TextField extends Widget {
   String _content = "";
   int _cursorPosition = 0;
 

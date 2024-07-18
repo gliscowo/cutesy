@@ -4,13 +4,13 @@ import 'package:diamond_gl/diamond_gl.dart';
 import '../../context.dart';
 import '../../text/text.dart';
 import '../animation.dart';
-import '../component.dart';
 import '../math.dart';
 import '../sizing.dart';
+import '../widget.dart';
 
 typedef ButtonCallback = void Function(Button);
 
-class Button extends Component {
+class Button extends Widget {
   Text text;
   ButtonCallback callback;
 

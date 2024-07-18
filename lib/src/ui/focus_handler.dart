@@ -1,8 +1,8 @@
-import 'component.dart';
+import 'widget.dart';
 
 class FocusHandler {
-  final ParentComponent _root;
-  Component? _focused;
+  final ParentWidget _root;
+  Widget? _focused;
   FocusSource? _lastFocusSource;
 
   FocusHandler(this._root);
@@ -12,14 +12,14 @@ class FocusHandler {
     focus(clicked != null && clicked.canFocus(FocusSource.mouseClick) ? clicked : null, FocusSource.mouseClick);
   }
 
-  Component? get focused => _focused;
+  Widget? get focused => _focused;
   FocusSource? get lastFocusSource => _lastFocusSource;
 
   void cycle(bool forwards) {
-    var allChildren = <Component>[];
+    var allChildren = <Widget>[];
     _root.collectDescendants(allChildren);
 
-    allChildren.removeWhere((component) => !component.canFocus(FocusSource.keyboardCycle));
+    allChildren.removeWhere((widget) => !widget.canFocus(FocusSource.keyboardCycle));
     if (allChildren.isEmpty) return;
 
     int newIndex = _focused == null
@@ -102,13 +102,13 @@ class FocusHandler {
   //     this.focus(closest, FocusSource.keyboardCycle);
   // }
 
-  void focus(Component? component, FocusSource source) {
-    if (focused != component) {
+  void focus(Widget? widget, FocusSource source) {
+    if (focused != widget) {
       if (focused != null) {
         focused!.onFocusLost();
       }
 
-      if ((_focused = component) != null) {
+      if ((_focused = widget) != null) {
         focused!.onFocusGained(source);
         _lastFocusSource = source;
       } else {

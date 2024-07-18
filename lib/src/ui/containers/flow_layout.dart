@@ -3,16 +3,16 @@ import 'dart:core';
 
 import '../../context.dart';
 import '../animation.dart';
-import '../component.dart';
 import '../math.dart';
 import '../sizing.dart';
+import '../widget.dart';
 import 'mounting_helper.dart';
 
 typedef _LayoutFunc = void Function(FlowLayout);
 
-class FlowLayout extends ParentComponent {
-  final List<Component> _children = [];
-  late final List<Component> _childrenView = UnmodifiableListView(_children);
+class FlowLayout extends ParentWidget {
+  final List<Widget> _children = [];
+  late final List<Widget> _childrenView = UnmodifiableListView(_children);
 
   final Observable<int> gap = 0.observable;
 
@@ -34,7 +34,7 @@ class FlowLayout extends ParentComponent {
   void layout(LayoutContext context) => _algorithm(this);
 
   @override
-  List<Component> get children => _childrenView;
+  List<Widget> get children => _childrenView;
 
   @override
   void draw(DrawContext matrices, int mouseX, int mouseY, double delta) {
@@ -44,7 +44,7 @@ class FlowLayout extends ParentComponent {
 
   /// Add [child] to this layout. If you need to add multiple
   /// children, use [addChildren] instead
-  void addChild(Component child, {int? index}) {
+  void addChild(Widget child, {int? index}) {
     if (index == null) {
       _children.add(child);
     } else {
@@ -55,7 +55,7 @@ class FlowLayout extends ParentComponent {
 
   /// Insert [children] into this layout. If you only need to
   /// insert a single child to, use [addChild] instead
-  void addChildren(Iterable<Component> children, {int? index}) {
+  void addChildren(Iterable<Widget> children, {int? index}) {
     if (index == null) {
       _children.addAll(children);
     } else {
@@ -65,7 +65,7 @@ class FlowLayout extends ParentComponent {
   }
 
   @override
-  void removeChild(Component child) {
+  void removeChild(Widget child) {
     if (_children.remove(child)) {
       child.dismount(DismountReason.removed);
       updateLayout();
@@ -109,7 +109,7 @@ class FlowLayout extends ParentComponent {
     var layoutWidth = 0;
     var layoutHeight = 0;
 
-    final layout = <Component>[];
+    final layout = <Widget>[];
     final padding = container.padding.value;
     final childContext = container.childContext;
 
@@ -133,18 +133,18 @@ class FlowLayout extends ParentComponent {
     container.applySizing();
 
     if (container.verticalAlignment.value != VerticalAlignment.top) {
-      for (var component in layout) {
-        component.updateY(component.y +
-            container.verticalAlignment.value.align(component.fullSize.height, container.height - padding.vertical));
+      for (var widget in layout) {
+        widget.updateY(widget.y +
+            container.verticalAlignment.value.align(widget.fullSize.height, container.height - padding.vertical));
       }
     }
 
     if (container.horizontalAlignment.value != HorizontalAlignment.left) {
-      for (var component in layout) {
+      for (var widget in layout) {
         if (container.horizontalAlignment.value == HorizontalAlignment.center) {
-          component.updateX(component.x + (container.width - padding.horizontal - layoutWidth) ~/ 2);
+          widget.updateX(widget.x + (container.width - padding.horizontal - layoutWidth) ~/ 2);
         } else {
-          component.updateX(component.x + (container.width - padding.horizontal - layoutWidth));
+          widget.updateX(widget.x + (container.width - padding.horizontal - layoutWidth));
         }
       }
     }
@@ -156,7 +156,7 @@ class FlowLayout extends ParentComponent {
     var layoutHeight = 0;
     var layoutWidth = 0;
 
-    final layout = <Component>[];
+    final layout = <Widget>[];
     final padding = container.padding.value;
     final childContext = container.childContext;
 
@@ -180,18 +180,18 @@ class FlowLayout extends ParentComponent {
     container.applySizing();
 
     if (container.horizontalAlignment.value != HorizontalAlignment.left) {
-      for (final component in layout) {
-        component.updateX(component.x +
-            container.horizontalAlignment.value.align(component.fullSize.width, container.width - padding.horizontal));
+      for (final widget in layout) {
+        widget.updateX(widget.x +
+            container.horizontalAlignment.value.align(widget.fullSize.width, container.width - padding.horizontal));
       }
     }
 
     if (container.verticalAlignment.value != VerticalAlignment.top) {
-      for (final component in layout) {
+      for (final widget in layout) {
         if (container.verticalAlignment.value == VerticalAlignment.center) {
-          component.updateY(component.y + (container.height - padding.vertical - layoutHeight) ~/ 2);
+          widget.updateY(widget.y + (container.height - padding.vertical - layoutHeight) ~/ 2);
         } else {
-          component.updateY(component.y + (container.height - padding.vertical - layoutHeight));
+          widget.updateY(widget.y + (container.height - padding.vertical - layoutHeight));
         }
       }
     }

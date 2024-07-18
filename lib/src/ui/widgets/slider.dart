@@ -2,10 +2,10 @@ import 'package:diamond_gl/diamond_gl.dart';
 
 import '../../context.dart';
 import '../animation.dart';
-import '../component.dart';
+import '../widget.dart';
 import '../sizing.dart';
 
-class Slider extends Component {
+class Slider extends Widget {
   final Observable<double> _progress = 0.0.observable;
   void Function(double)? listener;
 

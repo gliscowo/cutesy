@@ -1,18 +1,18 @@
-import '../component.dart';
 import '../positioning.dart';
+import '../widget.dart';
 
-typedef ComponentSink = void Function(Component?, LayoutContext, void Function(Component));
+typedef WidgetSink = void Function(Widget?, LayoutContext, void Function(Widget));
 
 class MountingHelper {
-  final ComponentSink _sink;
-  final List<Component> _lateChildren = [];
+  final WidgetSink _sink;
+  final List<Widget> _lateChildren = [];
   final LayoutContext _childContext;
 
   MountingHelper.mountEarly(
     this._sink,
-    List<Component> children,
+    List<Widget> children,
     this._childContext,
-    void Function(Component) layoutFunc,
+    void Function(Widget) layoutFunc,
   ) {
     for (final child in children) {
       if (child.positioning.value.type != PositioningType.relative) {

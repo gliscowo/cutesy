@@ -73,7 +73,7 @@ extension Observe<T> on T {
 }
 
 /// A container which holds an animatable object,
-/// used to manage to properties of UI components. Extends
+/// used to manage to properties of UI widgets. Extends
 /// the [Observable] container so that changes in its value
 /// can be propagated to the holder of the property
 class AnimatableProperty<A> extends Observable<A> {

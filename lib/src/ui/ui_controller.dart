@@ -6,11 +6,11 @@ import 'package:diamond_gl/diamond_gl.dart';
 
 import '../context.dart';
 import '../text/text_renderer.dart';
-import 'component.dart';
 import 'cursor_adapter.dart';
 import 'sizing.dart';
+import 'widget.dart';
 
-class UIController<R extends ParentComponent> {
+class UIController<R extends ParentWidget> {
   final Window _window;
   final TextRenderer _textRenderer;
   late final CursorAdapter _cursorAdapter;
@@ -19,9 +19,9 @@ class UIController<R extends ParentComponent> {
   late final R _root;
 
   UIController.ofWindow(
-      this._window, this._textRenderer, R Function(Sizing horizontal, Sizing vertical) rootComponentFactory) {
+      this._window, this._textRenderer, R Function(Sizing horizontal, Sizing vertical) rootWidgetFactory) {
     _cursorAdapter = CursorAdapter.ofWindow(_window);
-    _root = rootComponentFactory(Sizing.fill(), Sizing.fill());
+    _root = rootWidgetFactory(Sizing.fill(), Sizing.fill());
 
     _subscriptions = [
       _window.onResize.listen((event) => inflateAndMount()),

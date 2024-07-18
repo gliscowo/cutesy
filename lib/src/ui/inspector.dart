@@ -4,8 +4,8 @@ import 'package:diamond_gl/diamond_gl.dart';
 
 import '../context.dart';
 import '../text/text.dart';
-import 'component.dart';
 import 'insets.dart';
+import 'widget.dart';
 
 abstract class Inspector {
   static const _textSize = 20.0;
@@ -33,15 +33,15 @@ abstract class Inspector {
   }
 
   /// Draw the element inspector for the given tree, detailing the position,
-  /// bounding box, margins and padding of each component
+  /// bounding box, margins and padding of each widget
   ///
   /// @param matrices    The transformation matrix stack
-  /// @param root        The root component of the hierarchy to draw
+  /// @param root        The root widget of the hierarchy to draw
   /// @param mouseX      The x-coordinate of the mouse pointer
   /// @param mouseY      The y-coordinate of the mouse pointer
   /// @param onlyHovered Whether to only draw the inspector for the hovered widget
-  static void drawInspector(DrawContext context, ParentComponent root, double mouseX, double mouseY, bool onlyHovered) {
-    final children = <Component>[];
+  static void drawInspector(DrawContext context, ParentWidget root, double mouseX, double mouseY, bool onlyHovered) {
+    final children = <Widget>[];
     if (!onlyHovered) {
       root.collectDescendants(children);
     } else if (root.childAt(mouseX.toInt(), mouseY.toInt()) != null) {
@@ -49,7 +49,7 @@ abstract class Inspector {
     }
 
     for (var child in children) {
-      if (child is ParentComponent) {
+      if (child is ParentWidget) {
         drawInsets(context, child.x, child.y, child.width, child.height, child.padding.value.inverted,
             Color.ofArgb(0xA70CECDD));
       }
@@ -68,7 +68,7 @@ abstract class Inspector {
           StyledString(
             "${child.x},${child.y} (${child.width},${child.height}) <${child.margins.value.top},${child.margins.value.bottom},${child.margins.value.left},${child.margins.value.right}>",
           ),
-          if (child is ParentComponent)
+          if (child is ParentWidget)
             StyledString(
               " <${child.padding.value.top},${child.padding.value.bottom},${child.padding.value.left},${child.padding.value.right}>",
             ),
@@ -84,7 +84,7 @@ abstract class Inspector {
         if (inspectorY > context.renderContext.window.height - inspectorHeight) {
           inspectorY -= child.fullSize.height + inspectorHeight + 1;
           if (inspectorY < 0) inspectorY = 1;
-          if (child is ParentComponent) {
+          if (child is ParentWidget) {
             inspectorX += child.padding.value.left;
             inspectorY += child.padding.value.top;
           }

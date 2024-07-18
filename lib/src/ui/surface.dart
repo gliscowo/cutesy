@@ -1,30 +1,30 @@
 import 'package:diamond_gl/diamond_gl.dart';
 
 import '../context.dart';
-import 'component.dart';
+import 'widget.dart';
 
-typedef Surface = void Function(DrawContext, Component);
+typedef Surface = void Function(DrawContext, Widget);
 
 class Surfaces {
-  static void blank(DrawContext context, Component component) {}
+  static void blank(DrawContext context, Widget widget) {}
 
-  static Surface flat(Color color) => (context, component) {
+  static Surface flat(Color color) => (context, widget) {
         context.primitives.rect(
-          component.x.toDouble(),
-          component.y.toDouble(),
-          component.width.toDouble(),
-          component.height.toDouble(),
+          widget.x.toDouble(),
+          widget.y.toDouble(),
+          widget.width.toDouble(),
+          widget.height.toDouble(),
           color,
           context.projection,
         );
       };
 
-  static Surface outline(Color color, [int thickness = 2]) => (context, component) {
+  static Surface outline(Color color, [int thickness = 2]) => (context, widget) {
         context.primitives.roundedRect(
-          component.x.toDouble(),
-          component.y.toDouble(),
-          component.width.toDouble(),
-          component.height.toDouble(),
+          widget.x.toDouble(),
+          widget.y.toDouble(),
+          widget.width.toDouble(),
+          widget.height.toDouble(),
           0,
           color,
           context.projection,

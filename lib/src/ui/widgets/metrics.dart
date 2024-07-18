@@ -8,10 +8,10 @@ import '../../../vertex_descriptors.dart';
 import '../../context.dart';
 import '../../text/text.dart';
 import '../animation.dart';
-import '../component.dart';
 import '../sizing.dart';
+import '../widget.dart';
 
-class Metrics extends Component {
+class Metrics extends Widget {
   final Queue<double> _frametimes = Queue();
 
   double _frametimeAccumulator = 0;

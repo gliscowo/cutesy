@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'package:dart_glfw/dart_glfw.dart';
 import 'package:diamond_gl/diamond_gl.dart';
 
-import 'component.dart';
+import 'widget.dart';
 
 class CursorAdapter {
   static const List<CursorStyle> activeStyles = [

@@ -1,9 +1,9 @@
 import 'package:diamond_gl/diamond_gl.dart';
 
 import '../../context.dart';
-import '../component.dart';
+import '../widget.dart';
 
-class Box extends Component {
+class Box extends Widget {
   Color color = Color.black;
   bool outline = false;
   double cornerRadius = 0;

@@ -3,11 +3,11 @@ import 'package:diamond_gl/diamond_gl.dart';
 import '../../context.dart';
 import '../../text/text.dart';
 import '../animation.dart';
-import '../component.dart';
+import '../widget.dart';
 import '../math.dart';
 import '../sizing.dart';
 
-class Label extends Component {
+class Label extends Widget {
   final Observable<Text> _text;
   Size? _textSizeCache;
 
