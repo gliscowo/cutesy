@@ -58,17 +58,19 @@ class UIController<R extends ParentComponent> {
     _root.mount(null, 0, 0);
   }
 
-  void render(DrawContext context, double delta) {
+  void render(DrawContext context, double delta, {int? mouseX, int? mouseY}) {
     _root.update(delta, _window.cursorX.toInt(), _window.cursorY.toInt());
 
     gl.enable(glScissorTest);
     gl.scissor(0, 0, _window.width, _window.height);
 
-    _root.draw(context, _window.cursorX.toInt(), _window.cursorY.toInt(), delta);
+    mouseX ??= _window.cursorX.toInt();
+    mouseY ??= _window.cursorY.toInt();
+    _root.draw(context, mouseX, mouseY, delta);
 
     gl.disable(glScissorTest);
 
-    final hovered = _root.childAt(_window.cursorX.toInt(), _window.cursorY.toInt());
+    final hovered = _root.childAt(mouseX, mouseY);
     if (hovered != null) {
       _cursorAdapter.applyStyle(hovered.cursorStyle);
     }

@@ -28,6 +28,7 @@ class RenderContext {
   }
 }
 
+// TODO global transform
 class DrawContext {
   final RenderContext renderContext;
   final ImmediatePrimitiveRenderer primitives;

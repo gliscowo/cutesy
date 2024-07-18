@@ -811,7 +811,6 @@ abstract class ParentComponent extends Component {
     // }
 
     // var focusHandler = this.focusHandler();
-    //noinspection ForLoopReplaceableByForEach
     for (int i = 0; i < children.length; i++) {
       final child = children[i];
 
