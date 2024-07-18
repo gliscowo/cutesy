@@ -11,18 +11,18 @@ import 'mounting_helper.dart';
 typedef _LayoutFunc = void Function(FlowLayout);
 
 class FlowLayout extends ParentWidget {
-  final List<Widget> _children = [];
+  final List<Widget> _children;
   late final List<Widget> _childrenView = UnmodifiableListView(_children);
 
   final Observable<int> gap = 0.observable;
 
-  final _LayoutFunc _algorithm;
+  final _LayoutFunc _layoutImpl;
   Size _contentSize = Size.zero;
 
-  FlowLayout._(this._algorithm);
+  FlowLayout._(List<Widget> children, this._layoutImpl) : _children = List.of(children);
 
-  FlowLayout.vertical() : this._(_layoutVertical);
-  FlowLayout.horizontal() : this._(_layoutHorizontal);
+  FlowLayout.vertical({List<Widget> children = const []}) : this._(children, _layoutVertical);
+  FlowLayout.horizontal({List<Widget> children = const []}) : this._(children, _layoutHorizontal);
 
   @override
   int determineHorizontalContentSize(Sizing sizing) => _contentSize.width + padding.value.horizontal;
@@ -31,15 +31,15 @@ class FlowLayout extends ParentWidget {
   int determineVerticalContentSize(Sizing sizing) => _contentSize.height + padding.value.vertical;
 
   @override
-  void layout(LayoutContext context) => _algorithm(this);
+  void layout(LayoutContext context) => _layoutImpl(this);
 
   @override
   List<Widget> get children => _childrenView;
 
   @override
-  void draw(DrawContext matrices, int mouseX, int mouseY, double delta) {
-    super.draw(matrices, mouseX, mouseY, delta);
-    drawChildren(matrices, mouseX, mouseY, delta, _children);
+  void draw(DrawContext context, int mouseX, int mouseY, double delta) {
+    super.draw(context, mouseX, mouseY, delta);
+    drawChildren(context, mouseX, mouseY, delta, _children);
   }
 
   /// Add [child] to this layout. If you need to add multiple

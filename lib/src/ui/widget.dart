@@ -91,10 +91,9 @@ abstract class Widget with Rectangle {
 
   /// Set the method this widget uses to determine its size
   /// on both axes to [sizing]
-  void sizing(Sizing sizing) {
-    horizontalSizing(sizing);
-    verticalSizing(sizing);
-  }
+  void sizing(Sizing sizing) => this
+    ..horizontalSizing(sizing)
+    ..verticalSizing(sizing);
 
   /// The sizing method this widget uses on the x-axis
   final AnimatableProperty<Sizing> horizontalSizing = Sizing.content().animatable;
