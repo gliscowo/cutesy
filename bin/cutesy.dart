@@ -117,51 +117,57 @@ void main(List<String> args) async {
     });
 
   ui.root
-    ..addChild(FlowLayout.horizontal()
-      ..addChild(Button(Text.string("Buttgon", style: TextStyle(bold: true)), (p0) => _logger.info("button 1")))
-      ..addChild(Button(Text.string("_______", style: TextStyle(bold: true)), (p0) {
-        if (metrics.hasParent) {
-          metrics.remove();
-        } else {
-          ui.root.addChild(metrics);
-        }
-      }))
-      ..addChild(FlowLayout.vertical()
-        ..addChild(Label(Text.string("Label-time"))
-          ..color(Color.black)
-          ..verticalTextAlignment = VerticalAlignment.center
-          ..horizontalTextAlignment = HorizontalAlignment.center
-          ..size = 24)
-        ..addChild(Label(Text.string("AAAAAAAAA"))
-          ..color(Color.black)
-          ..verticalTextAlignment = VerticalAlignment.center
-          ..horizontalTextAlignment = HorizontalAlignment.center
-          ..size = 24)
-        ..addChild(Button(Text.string("hmmm"), (_) {})))
-      ..addChild(TextField()
-        ..verticalSizing(Sizing.fixed(30))
-        ..horizontalSizing(Sizing.fixed(350)))
-      ..padding(Insets.all(10))
-      ..gap(5)
-      ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)))
-    ..addChild(FlowLayout.vertical()
-      ..addChild(Label(Text.string("FPS: ${targetFps.value}"))
-        ..size = 15
-        ..configure((label) => targetFps.observe((fps) => label.text = Text.string("FPS: $fps"))))
-      ..addChild(Slider()
-        ..progress = 30 / 300
-        ..listener = (p0) => targetFps(30 + (300 * p0).round()))
-      ..horizontalAlignment(HorizontalAlignment.center)
-      ..gap(5))
-    ..addChild(FlowLayout.vertical()
-      ..addChild(Label(Text.string("Opacity: ${opacity.value}%"))
-        ..size = 15
-        ..configure((label) => opacity.observe((opacity) => label.text = Text.string("Opacity: $opacity%"))))
-      ..addChild(Slider()
-        ..progress = 1
-        ..listener = (p0) => opacity((100 * p0).round()))
-      ..horizontalAlignment(HorizontalAlignment.center)
-      ..gap(5))
+    ..addChildren([
+      FlowLayout.horizontal(children: [
+        Button(Text.string("Buttgon", style: TextStyle(bold: true)), (p0) => _logger.info("button 1")),
+        Button(Text.string("_______", style: TextStyle(bold: true)), (p0) {
+          if (metrics.hasParent) {
+            metrics.remove();
+          } else {
+            ui.root.addChild(metrics);
+          }
+        }),
+        FlowLayout.vertical(children: [
+          Label(Text.string("Label-time"))
+            ..color(Color.black)
+            ..verticalTextAlignment = VerticalAlignment.center
+            ..horizontalTextAlignment = HorizontalAlignment.center
+            ..size = 24,
+          Label(Text.string("AAAAAAAAA"))
+            ..color(Color.black)
+            ..verticalTextAlignment = VerticalAlignment.center
+            ..horizontalTextAlignment = HorizontalAlignment.center
+            ..size = 24,
+          Button(Text.string("hmmm"), (_) {}),
+        ]),
+        TextField()
+          ..verticalSizing(Sizing.fixed(30))
+          ..horizontalSizing(Sizing.fixed(350)),
+      ])
+        ..padding(Insets.all(10))
+        ..gap(5)
+        ..surface = Surfaces.flat(Color.rgb(0, 0, 0, .5)),
+      FlowLayout.vertical(children: [
+        Label(Text.string("FPS: ${targetFps.value}"))
+          ..size = 15
+          ..configure((label) => targetFps.observe((fps) => label.text = Text.string("FPS: $fps"))),
+        Slider()
+          ..progress = 30 / 300
+          ..listener = (p0) => targetFps(30 + (300 * p0).round())
+      ])
+        ..horizontalAlignment(HorizontalAlignment.center)
+        ..gap(5),
+      FlowLayout.vertical(children: [
+        Label(Text.string("Opacity: ${opacity.value}%"))
+          ..size = 15
+          ..configure((label) => opacity.observe((opacity) => label.text = Text.string("Opacity: $opacity%"))),
+        Slider()
+          ..progress = 1
+          ..listener = (p0) => opacity((100 * p0).round())
+      ])
+        ..horizontalAlignment(HorizontalAlignment.center)
+        ..gap(5)
+    ])
     ..gap(25)
     ..horizontalAlignment(HorizontalAlignment.center)
     ..verticalAlignment(VerticalAlignment.center);
@@ -184,8 +190,9 @@ void main(List<String> args) async {
 
   while (_running && glfw.windowShouldClose(_window.handle) != glfwTrue) {
     gl.clearColor(.25, .25, .25, 0);
-    gl.clear(glColorBufferBit);
+    gl.clear(glColorBufferBit | glDepthBufferBit);
     gl.enable(glBlend);
+    // gl.enable(glDepthTest);
 
     var delta = glfw.getTime() - lastTime;
     while (delta < 1 / targetFps.value) {

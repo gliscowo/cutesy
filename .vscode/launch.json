@@ -16,7 +16,7 @@
             "type": "dart",
             "program": "bin/cutesy.dart",
             "env": {
-                "LD_PRELOAD": "/home/lily/Downloads/renderdoc_1.31/lib/librenderdoc.so"
+                "LD_PRELOAD": "/home/lily/Downloads/renderdoc_1.24/lib/librenderdoc.so"
             }
         }
     ]
